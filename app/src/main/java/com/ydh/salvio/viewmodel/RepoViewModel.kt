@@ -7,6 +7,8 @@ import com.ydh.salvio.SalvioApplication
 import com.ydh.salvio.data.model.GitHubRepo
 import com.ydh.salvio.data.worker.PrCheckWorker
 import com.ydh.salvio.util.toUserMessage
+import com.ydh.salvio.util.NetworkState
+import com.ydh.salvio.util.isAuthExpired
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -44,6 +46,12 @@ class RepoViewModel(application: Application) : AndroidViewModel(application) {
             val hasData = _repoListState.value is RepoListState.Success
             if (hasData) _isRefreshing.value = true else _repoListState.value = RepoListState.Loading
 
+            if (!NetworkState.isNetworkAvailable(app)) {
+                _repoListState.value = RepoListState.Error("인터넷에 연결되어 있지 않습니다.")
+                _isRefreshing.value = false
+                return@launch
+            }
+
             val token = dataStore.token.first() ?: run {
                 _repoListState.value = RepoListState.Error("로그인이 필요합니다. 다시 로그인해 주세요.")
                 _isRefreshing.value = false
@@ -53,8 +61,11 @@ class RepoViewModel(application: Application) : AndroidViewModel(application) {
             repo.getUserRepos(forceRefresh).fold(
                 onSuccess = { repos -> _repoListState.value = RepoListState.Success(repos) },
                 onFailure = { e ->
-                    // 새로고침 중 실패면 기존 목록을 유지하고, 초기 로드 실패만 에러 화면으로 전환한다.
-                    if (!hasData) _repoListState.value = RepoListState.Error(e.toUserMessage("조회에 실패했습니다."))
+                    if (e.isAuthExpired()) {
+                        _repoListState.value = RepoListState.Error("인증이 만료되었습니다. 다시 로그인하세요.")
+                    } else if (!hasData) {
+                        _repoListState.value = RepoListState.Error(e.toUserMessage("조회에 실패했습니다."))
+                    }
                 }
             )
             _isRefreshing.value = false

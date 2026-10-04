@@ -18,6 +18,9 @@ fun Throwable.isRateLimited(): Boolean {
     return e.response()?.headers()?.get("X-RateLimit-Remaining")?.toIntOrNull() == 0
 }
 
+/** 인증 만료 여부 (401 Unauthorized) */
+fun Throwable.isAuthExpired(): Boolean = (this as? HttpException)?.code() == 401
+
 /**
  * 어떤 예외든 사용자에게 보여줄 한국어 메시지로 변환한다.
  * ViewModel 전반에 흩어져 있던 raw `e.message` 노출과 임시 문자열 검사를 대체한다.

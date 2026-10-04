@@ -9,6 +9,8 @@ import kotlinx.coroutines.flow.update
 import com.ydh.salvio.data.repository.GitHubRepository
 import com.ydh.salvio.util.httpCode
 import com.ydh.salvio.util.toUserMessage
+import com.ydh.salvio.util.NetworkState
+import com.ydh.salvio.util.isAuthExpired
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -124,6 +126,12 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     fun loadDashboard(owner: String, repoName: String, forceRefresh: Boolean = false) {
         viewModelScope.launch {
             _dashboardState.value = _dashboardState.value.copy(isLoading = true, error = null)
+
+            if (!NetworkState.isNetworkAvailable(app)) {
+                _dashboardState.value = _dashboardState.value.copy(isLoading = false, error = "인터넷에 연결되어 있지 않습니다.")
+                return@launch
+            }
+
             val repo = getRepo() ?: run {
                 _dashboardState.value = _dashboardState.value.copy(isLoading = false, error = NO_TOKEN_MSG)
                 return@launch
@@ -151,6 +159,11 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 branchesResult, contributorsResult, closedResult
             ).firstNotNullOfOrNull { it.exceptionOrNull() }
 
+            val errorMessage = firstError?.let {
+                if (it.isAuthExpired()) "인증이 만료되었습니다. 다시 로그인하세요."
+                else it.toUserMessage("대시보드를 불러오지 못했습니다.")
+            }
+
             _dashboardState.value = DashboardUiState(
                 isLoading = false,
                 repo = repoInfoResult.getOrNull(),
@@ -169,7 +182,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 openPrs = openPrsResult.getOrElse { emptyList() }.take(3),
                 branches = branchesResult.getOrElse { emptyList() },
                 contributors = contributorsResult.getOrElse { emptyList() },
-                error = firstError?.toUserMessage("대시보드를 불러오지 못했습니다.")
+                error = errorMessage
             )
         }
     }

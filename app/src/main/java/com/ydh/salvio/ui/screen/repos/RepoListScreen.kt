@@ -58,8 +58,8 @@ fun RepoListScreen(
     val themeMode by themeViewModel.themeMode.collectAsState()
     val user = (authState as? AuthState.Success)?.user
 
-    var searchQuery by remember { mutableStateOf("") }
-    var showFavoritesOnly by remember { mutableStateOf(false) }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    var showFavoritesOnly by rememberSaveable { mutableStateOf(false) }
     var showSettingsDialog by remember { mutableStateOf(false) }
     var pendingWatchRepoName by remember { mutableStateOf<String?>(null) }
 
@@ -129,7 +129,7 @@ fun RepoListScreen(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
                     placeholder = { Text("저장소 검색", color = SalvioTheme.colors.textSecondary) },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = SalvioTheme.colors.textSecondary) },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = "검색", tint = SalvioTheme.colors.textSecondary) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = Spacing.sm),
@@ -142,7 +142,7 @@ fun RepoListScreen(
                     trailingIcon = {
                         if (searchQuery.isNotBlank()) {
                             IconButton(onClick = { searchQuery = "" }) {
-                                Icon(Icons.Default.Clear, contentDescription = null, tint = SalvioTheme.colors.textSecondary)
+                                Icon(Icons.Default.Clear, contentDescription = "검색어 삭제", tint = SalvioTheme.colors.textSecondary)
                             }
                         }
                     }
@@ -373,17 +373,17 @@ fun RepoCard(
                         Text(lang, fontSize = 12.sp, color = SalvioTheme.colors.textSecondary)
                     }
                 }
-                MetaText(Icons.Outlined.Star, repo.stars.toString())
-                MetaText(Icons.Default.ErrorOutline, "${repo.openIssues}")
+                MetaText(Icons.Outlined.Star, repo.stars.toString(), "스타 개수")
+                MetaText(Icons.Default.ErrorOutline, "${repo.openIssues}", "열린 이슈")
             }
         }
     }
 }
 
 @Composable
-private fun MetaText(icon: androidx.compose.ui.graphics.vector.ImageVector, value: String) {
+private fun MetaText(icon: androidx.compose.ui.graphics.vector.ImageVector, value: String, label: String = "") {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-        Icon(icon, contentDescription = null, tint = SalvioTheme.colors.textSecondary, modifier = Modifier.size(13.dp))
+        Icon(icon, contentDescription = label, tint = SalvioTheme.colors.textSecondary, modifier = Modifier.size(13.dp))
         Text(value, fontSize = 12.sp, color = SalvioTheme.colors.textSecondary)
     }
 }
