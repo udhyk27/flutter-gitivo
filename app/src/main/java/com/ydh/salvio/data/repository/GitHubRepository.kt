@@ -10,7 +10,6 @@ class GitHubRepository(
     private val api: GitHubApi,
     private val dao: CacheDao? = null
 ) {
-    private val gson = Gson()
     private val cacheMaxAgeMs = 5 * 60 * 1000L // 5분
 
     private fun isExpired(cachedAt: Long) =
@@ -37,7 +36,7 @@ class GitHubRepository(
                 return@runCatching cached.map { gson.fromJson(it.json, type) }
             }
         }
-        val commits = api.getCommits(owner, repo, perPage = 30, page = page)
+        val commits = api.getCommits(owner, repo, perPage = 100, page = page)
         if (page == 1) {
             dao?.deleteCommits(repoFullName)
             dao?.insertCommits(commits.map { CachedCommit("$repoFullName:${it.sha}", repoFullName, gson.toJson(it)) })
@@ -52,7 +51,7 @@ class GitHubRepository(
             val type = object : TypeToken<GitHubPullRequest>() {}.type
             return@runCatching cached.map { gson.fromJson(it.json, type) }
         }
-        val prs = api.getPullRequests(owner, repo, state = state, perPage = 50)
+        val prs = api.getPullRequests(owner, repo, state = state, perPage = 100)
         dao?.deletePrs(repoFullName, state)
         dao?.insertPrs(prs.map { CachedPr("$repoFullName:${it.number}:$state", repoFullName, state, gson.toJson(it)) })
         prs
@@ -210,6 +209,10 @@ class GitHubRepository(
         val result = api.getCheckRuns(owner, repo, ref)
         dao?.insertCheckRuns(CachedCheckRuns(cacheId, repoFullName, ref, gson.toJson(result)))
         result
+    }
+
+    companion object {
+        private val gson = Gson()
     }
 
     suspend fun getCommitActivity(owner: String, repo: String, forceRefresh: Boolean = false): Result<List<CommitWeekActivity>> = runCatching {

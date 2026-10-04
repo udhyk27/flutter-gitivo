@@ -19,7 +19,7 @@ interface GitHubApi {
     suspend fun getCommits(
         @Path("owner") owner: String,
         @Path("repo") repo: String,
-        @Query("per_page") perPage: Int = 30,
+        @Query("per_page") perPage: Int = 100,
         @Query("page") page: Int = 1
     ): List<GitHubCommit>
 
@@ -28,7 +28,7 @@ interface GitHubApi {
         @Path("owner") owner: String,
         @Path("repo") repo: String,
         @Query("state") state: String = "open",
-        @Query("per_page") perPage: Int = 30,
+        @Query("per_page") perPage: Int = 100,
         @Query("page") page: Int = 1
     ): List<GitHubPullRequest>
 
@@ -43,7 +43,7 @@ interface GitHubApi {
     suspend fun getContributors(
         @Path("owner") owner: String,
         @Path("repo") repo: String,
-        @Query("per_page") perPage: Int = 30
+        @Query("per_page") perPage: Int = 100
     ): List<GitHubContributor>
 
     @GET("repos/{owner}/{repo}")
@@ -84,14 +84,14 @@ interface GitHubApi {
         @Path("owner") owner: String,
         @Path("repo") repo: String,
         @Query("state") state: String = "open",
-        @Query("per_page") perPage: Int = 50
+        @Query("per_page") perPage: Int = 100
     ): List<GitHubIssue>
 
     @GET("repos/{owner}/{repo}/releases")
     suspend fun getReleases(
         @Path("owner") owner: String,
         @Path("repo") repo: String,
-        @Query("per_page") perPage: Int = 20
+        @Query("per_page") perPage: Int = 100
     ): List<GitHubRelease>
 
     @GET("repos/{owner}/{repo}/commits/{ref}/check-runs")
@@ -141,6 +141,6 @@ interface GitHubApi {
     @GET("search/code")
     suspend fun searchCode(
         @Query("q") query: String,
-        @Query("per_page") perPage: Int = 30
+        @Query("per_page") perPage: Int = 100
     ): CodeSearchResponse
 }

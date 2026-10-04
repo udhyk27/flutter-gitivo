@@ -167,49 +167,50 @@ fun RepoListScreen(
 
                     PullToRefreshBox(
                         isRefreshing = isRefreshing,
-                        onRefresh = { repoViewModel.loadRepos(forceRefresh = true) }
+                        onRefresh = { repoViewModel.loadRepos(forceRefresh = true) },
+                        modifier = Modifier.fillMaxSize()
                     ) {
-                    LazyColumn(
-                        contentPadding = PaddingValues(horizontal = Spacing.screen, vertical = Spacing.md),
-                        verticalArrangement = Arrangement.spacedBy(Spacing.sm)
-                    ) {
-                        item(key = "search") { searchField() }
+                        LazyColumn(
+                            contentPadding = PaddingValues(horizontal = Spacing.screen, vertical = Spacing.md),
+                            verticalArrangement = Arrangement.spacedBy(Spacing.sm)
+                        ) {
+                            item(key = "search") { searchField() }
 
-                        if (sorted.isEmpty()) {
-                            item(key = "empty") {
-                                EmptyState("저장소가 없습니다.", Icons.Default.FolderOff)
-                            }
-                        } else {
-                            if (favRepos.isNotEmpty() && !showFavoritesOnly) {
-                                item { ListLabel("즐겨찾기") }
-                            }
-                            items(sorted, key = { it.fullName }) { repo ->
-                                val isFavorite = favorites.contains(repo.fullName)
-                                val isWatched = watchedRepos.contains(repo.fullName)
-                                val showDivider = !showFavoritesOnly && repo == otherRepos.firstOrNull()
+                            if (sorted.isEmpty()) {
+                                item(key = "empty") {
+                                    EmptyState("저장소가 없습니다.", Icons.Default.FolderOff)
+                                }
+                            } else {
+                                if (favRepos.isNotEmpty() && !showFavoritesOnly) {
+                                    item { ListLabel("즐겨찾기") }
+                                }
+                                items(sorted, key = { it.fullName }) { repo ->
+                                    val isFavorite = favorites.contains(repo.fullName)
+                                    val isWatched = watchedRepos.contains(repo.fullName)
+                                    val showDivider = !showFavoritesOnly && repo == otherRepos.firstOrNull()
 
-                                if (showDivider) ListLabel("전체", top = Spacing.sm)
+                                    if (showDivider) ListLabel("전체", top = Spacing.sm)
 
-                                RepoCard(
-                                    repo = repo,
-                                    isFavorite = isFavorite,
-                                    isWatched = isWatched,
-                                    onFavoriteToggle = { repoViewModel.toggleFavorite(repo.fullName) },
-                                    onWatchToggle = {
-                                        if (isWatched) {
-                                            repoViewModel.toggleWatch(repo.fullName)
-                                        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                            pendingWatchRepoName = repo.fullName
-                                            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                        } else {
-                                            repoViewModel.toggleWatch(repo.fullName)
-                                        }
-                                    },
-                                    onClick = { onRepoSelected(repo.owner.login, repo.name) }
-                                )
+                                    RepoCard(
+                                        repo = repo,
+                                        isFavorite = isFavorite,
+                                        isWatched = isWatched,
+                                        onFavoriteToggle = { repoViewModel.toggleFavorite(repo.fullName) },
+                                        onWatchToggle = {
+                                            if (isWatched) {
+                                                repoViewModel.toggleWatch(repo.fullName)
+                                            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                                pendingWatchRepoName = repo.fullName
+                                                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                            } else {
+                                                repoViewModel.toggleWatch(repo.fullName)
+                                            }
+                                        },
+                                        onClick = { onRepoSelected(repo.owner.login, repo.name) }
+                                    )
+                                }
                             }
                         }
-                    }
                     }
                 }
                 else -> {}
