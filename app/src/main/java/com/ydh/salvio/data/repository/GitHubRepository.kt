@@ -10,10 +10,13 @@ class GitHubRepository(
     private val api: GitHubApi,
     private val dao: CacheDao? = null
 ) {
-    private val cacheMaxAgeMs = 5 * 60 * 1000L // 5분
+    private val cacheMaxAgeMs = 5 * 60 * 1000L // 기본: 5분
+    private val shortCacheMs = 3 * 60 * 1000L // PR/이슈(변경 빈번): 3분
+    private val longCacheMs = 30 * 60 * 1000L // 통계/기여자(변경 드문): 30분
+    private val statsTrafficCacheMs = 60 * 60 * 1000L // 트래픽(변경 매우 드문): 1시간
 
-    private fun isExpired(cachedAt: Long) =
-        System.currentTimeMillis() - cachedAt > cacheMaxAgeMs
+    private fun isExpired(cachedAt: Long, maxAgeMs: Long = cacheMaxAgeMs) =
+        System.currentTimeMillis() - cachedAt > maxAgeMs
 
     suspend fun getUser(): Result<GitHubUser> = runCatching { api.getAuthenticatedUser() }
 
@@ -47,7 +50,7 @@ class GitHubRepository(
     suspend fun getPullRequests(owner: String, repo: String, state: String = "open", forceRefresh: Boolean = false): Result<List<GitHubPullRequest>> = runCatching {
         val repoFullName = "$owner/$repo"
         val cached = dao?.getPrs(repoFullName, state)
-        if (!forceRefresh && !cached.isNullOrEmpty() && !isExpired(cached.first().cachedAt)) {
+        if (!forceRefresh && !cached.isNullOrEmpty() && !isExpired(cached.first().cachedAt, shortCacheMs)) {
             val type = object : TypeToken<GitHubPullRequest>() {}.type
             return@runCatching cached.map { gson.fromJson(it.json, type) }
         }
@@ -73,7 +76,7 @@ class GitHubRepository(
     suspend fun getContributors(owner: String, repo: String, forceRefresh: Boolean = false): Result<List<GitHubContributor>> = runCatching {
         val repoFullName = "$owner/$repo"
         val cached = dao?.getContributors(repoFullName)
-        if (!forceRefresh && cached != null && !isExpired(cached.cachedAt)) {
+        if (!forceRefresh && cached != null && !isExpired(cached.cachedAt, longCacheMs)) {
             val type = object : TypeToken<List<GitHubContributor>>() {}.type
             return@runCatching gson.fromJson(cached.json, type)
         }
@@ -115,7 +118,7 @@ class GitHubRepository(
     suspend fun getIssues(owner: String, repo: String, state: String = "open", forceRefresh: Boolean = false): Result<List<GitHubIssue>> = runCatching {
         val repoFullName = "$owner/$repo"
         val cached = dao?.getIssues(repoFullName, state)
-        if (!forceRefresh && !cached.isNullOrEmpty() && !isExpired(cached.first().cachedAt)) {
+        if (!forceRefresh && !cached.isNullOrEmpty() && !isExpired(cached.first().cachedAt, shortCacheMs)) {
             val type = object : TypeToken<GitHubIssue>() {}.type
             return@runCatching cached.map { gson.fromJson(it.json, type) }
         }
@@ -153,7 +156,7 @@ class GitHubRepository(
     suspend fun getTrafficViews(owner: String, repo: String, forceRefresh: Boolean = false): Result<TrafficViews> = runCatching {
         val repoFullName = "$owner/$repo"
         val cached = dao?.getTrafficViews(repoFullName)
-        if (!forceRefresh && cached != null && System.currentTimeMillis() - cached.cachedAt < 60 * 60 * 1000L) {
+        if (!forceRefresh && cached != null && !isExpired(cached.cachedAt, statsTrafficCacheMs)) {
             return@runCatching gson.fromJson(cached.json, TrafficViews::class.java)
         }
         val result = api.getTrafficViews(owner, repo)
@@ -164,7 +167,7 @@ class GitHubRepository(
     suspend fun getTrafficClones(owner: String, repo: String, forceRefresh: Boolean = false): Result<TrafficClones> = runCatching {
         val repoFullName = "$owner/$repo"
         val cached = dao?.getTrafficClones(repoFullName)
-        if (!forceRefresh && cached != null && System.currentTimeMillis() - cached.cachedAt < 60 * 60 * 1000L) {
+        if (!forceRefresh && cached != null && !isExpired(cached.cachedAt, statsTrafficCacheMs)) {
             return@runCatching gson.fromJson(cached.json, TrafficClones::class.java)
         }
         val result = api.getTrafficClones(owner, repo)
@@ -175,7 +178,7 @@ class GitHubRepository(
     suspend fun getContributorStats(owner: String, repo: String, forceRefresh: Boolean = false): Result<List<ContributorWeeklyStats>> = runCatching {
         val repoFullName = "$owner/$repo"
         val cached = dao?.getContributorStats(repoFullName)
-        if (!forceRefresh && cached != null && System.currentTimeMillis() - cached.cachedAt < 60 * 60 * 1000L) {
+        if (!forceRefresh && cached != null && !isExpired(cached.cachedAt, statsTrafficCacheMs)) {
             val type = object : TypeToken<List<ContributorWeeklyStats>>() {}.type
             return@runCatching gson.fromJson(cached.json, type)
         }

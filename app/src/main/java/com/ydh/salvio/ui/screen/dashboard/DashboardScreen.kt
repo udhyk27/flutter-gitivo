@@ -47,7 +47,7 @@ fun DashboardScreen(
     val state by dashboardViewModel.dashboardState.collectAsState()
 
     LaunchedEffect(owner, repoName) {
-        dashboardViewModel.loadDashboard(owner, repoName)
+        dashboardViewModel.loadDashboard(owner, repoName, forceRefresh = false)
     }
 
     Scaffold(
@@ -96,6 +96,9 @@ fun DashboardScreen(
                 verticalArrangement = Arrangement.spacedBy(Spacing.md)
             ) {
                 val bannerError = state.error
+                if (state.isLoading && state.stats != null) {
+                    item { RefreshingBanner() }
+                }
                 if (bannerError != null && state.stats != null) {
                     item { RefreshErrorBanner(bannerError) }
                 }
@@ -105,6 +108,23 @@ fun DashboardScreen(
                 item { OpenPRsSection(state, onNavigateToPRs) }
                 item { ContributorsSection(state) }
             }
+        }
+    }
+}
+
+@Composable
+private fun RefreshingBanner() {
+    Surface(
+        shape = Radius.button,
+        color = SalvioTheme.colors.accent.copy(alpha = 0.1f)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(Spacing.md),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp, color = SalvioTheme.colors.accent)
+            Text("업데이트 중...", fontSize = 13.sp, color = SalvioTheme.colors.accent)
         }
     }
 }
