@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -259,7 +260,8 @@ private fun CommitItem(commit: GitHubCommit, onClick: () -> Unit) {
     ) {
         AsyncImage(
             model = commit.author?.avatarUrl,
-            contentDescription = null,
+            contentDescription = "커밋 작성자 아바타",
+            contentScale = ContentScale.Crop,
             modifier = Modifier.size(28.dp).clip(CircleShape).background(SalvioTheme.colors.border)
         )
         Column(modifier = Modifier.weight(1f)) {
@@ -336,7 +338,8 @@ private fun ContributorsSection(state: DashboardUiState) {
                     ) {
                         AsyncImage(
                             model = contributor.avatarUrl,
-                            contentDescription = null,
+                            contentDescription = "기여자 ${contributor.login} 아바타",
+                            contentScale = ContentScale.Crop,
                             modifier = Modifier.size(28.dp).clip(CircleShape).background(SalvioTheme.colors.border)
                         )
                         Text(text = contributor.login, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
