@@ -184,3 +184,26 @@ fun EmptyState(
         }
     }
 }
+
+/** 빈 상태 (액션 포함). */
+@Composable
+fun EmptyStateWithAction(
+    message: String,
+    icon: ImageVector,
+    actionLabel: String,
+    onAction: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(Spacing.md)
+        ) {
+            Icon(icon, contentDescription = null, tint = SalvioTheme.colors.textSecondary, modifier = Modifier.size(44.dp))
+            Text(message, color = SalvioTheme.colors.textSecondary, style = MaterialTheme.typography.bodyMedium)
+            Button(onClick = onAction, shape = Radius.button) {
+                Text(actionLabel)
+            }
+        }
+    }
+}

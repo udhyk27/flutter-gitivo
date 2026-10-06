@@ -64,6 +64,8 @@ fun RepoListScreen(
     var showSettingsDialog by remember { mutableStateOf(false) }
     var pendingWatchRepoName by remember { mutableStateOf<String?>(null) }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -74,6 +76,16 @@ fun RepoListScreen(
     }
 
     LaunchedEffect(Unit) { repoViewModel.loadRepos() }
+
+    // 에러 발생 시 SnackBar 표시
+    LaunchedEffect(repoState) {
+        if (repoState is RepoListState.Error) {
+            snackbarHostState.showSnackbar(
+                message = repoState.message,
+                duration = SnackbarDuration.Long
+            )
+        }
+    }
 
     if (showSettingsDialog) {
         SettingsDialog(
@@ -123,6 +135,7 @@ fun RepoListScreen(
                 }
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         Column(modifier = Modifier.padding(paddingValues)) {
