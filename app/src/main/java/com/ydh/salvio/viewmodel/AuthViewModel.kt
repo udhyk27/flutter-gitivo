@@ -10,6 +10,8 @@ import com.ydh.salvio.data.model.GitHubUser
 import com.ydh.salvio.data.worker.PrCheckWorker
 import com.ydh.salvio.util.httpCode
 import com.ydh.salvio.util.toUserMessage
+import com.ydh.salvio.util.isAuthExpired
+import com.ydh.salvio.util.Logger
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -78,14 +80,17 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                     _authState.value = AuthState.Success(user)
                 },
                 onFailure = { e ->
-                    // 로그인 단계의 401은 "만료"가 아니라 토큰/권한 문제로 안내
-                    val msg = if (e.httpCode() == 401) {
-                        "토큰이 유효하지 않습니다. 토큰과 권한(scope)을 확인하세요."
+                    // 401 응답이면 자동 로그아웃
+                    if (e.isAuthExpired()) {
+                        Logger.authFailed("Token expired (401)")
+                        logout()
+                        _authState.value = AuthState.Error("인증이 만료되었습니다. 다시 로그인하세요.")
                     } else {
-                        e.toUserMessage("인증에 실패했습니다.")
+                        val msg = e.toUserMessage("인증에 실패했습니다.")
+                        Logger.authFailed(msg)
+                        _currentUser.value = null
+                        _authState.value = AuthState.Error(msg)
                     }
-                    _currentUser.value = null
-                    _authState.value = AuthState.Error(msg)
                 }
             )
         }
