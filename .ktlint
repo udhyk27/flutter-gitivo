@@ -1,0 +1,7 @@
+# KtLint Configuration
+# Run: ./gradlew ktlintFormat (to auto-format)
+# Run: ./gradlew ktlintCheck (to check)
+
+--android
+--max-line-length=120
+--indent=4

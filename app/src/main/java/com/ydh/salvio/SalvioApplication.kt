@@ -1,11 +1,16 @@
 package com.ydh.salvio
 
 import android.app.Application
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import com.ydh.salvio.data.api.RetrofitClient
 import com.ydh.salvio.data.local.AppDatabase
 import com.ydh.salvio.data.local.TokenDataStore
 import com.ydh.salvio.data.repository.GitHubRepository
 import com.ydh.salvio.data.worker.PrCheckWorker
+import com.ydh.salvio.data.worker.RepoSyncWorker
+import java.util.concurrent.TimeUnit
 
 class SalvioApplication : Application() {
     lateinit var tokenDataStore: TokenDataStore
@@ -40,5 +45,22 @@ class SalvioApplication : Application() {
         tokenDataStore = TokenDataStore(this)
         database = AppDatabase.getInstance(this)
         PrCheckWorker.ensureChannel(this)
+        scheduleRepoSync()
+    }
+
+    /**
+     * 주기적인 저장소 동기화를 스케줄한다.
+     * 사용자 설정으로 비활성화 가능하게 만들 수 있다.
+     */
+    private fun scheduleRepoSync() {
+        val syncRequest = PeriodicWorkRequestBuilder<RepoSyncWorker>(
+            15, TimeUnit.MINUTES
+        ).build()
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            RepoSyncWorker.UNIQUE_WORK_NAME,
+            ExistingPeriodicWorkPolicy.KEEP,
+            syncRequest
+        )
     }
 }
