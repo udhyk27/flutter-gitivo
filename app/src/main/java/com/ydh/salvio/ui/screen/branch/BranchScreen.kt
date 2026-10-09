@@ -84,9 +84,15 @@ fun BranchScreen(
                             )
                         }
                         items(state.branches, key = { it.name }) { branch ->
+                            val latestCommit = state.branchCommits[branch.name]
+                            LaunchedEffect(branch.name, latestCommit == null) {
+                                if (latestCommit == null) {
+                                    dashboardViewModel.loadBranchCommit(owner, repoName, branch.name)
+                                }
+                            }
                             BranchCard(
                                 branch = branch,
-                                latestCommit = state.branchCommits[branch.name],
+                                latestCommit = latestCommit,
                                 onClick = {
                                     val url = "https://github.com/$owner/$repoName/tree/${branch.name}"
                                     try {

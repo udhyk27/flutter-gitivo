@@ -288,21 +288,22 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             }
 
             val branchesResult = repo.getBranches(owner, repoName, forceRefresh)
-            val branches = branchesResult.getOrElse { emptyList() }
-            val commitMap = mutableMapOf<String, GitHubCommit>()
-
-            branches.forEach { branch ->
-                repo.getBranchLatestCommit(owner, repoName, branch.name).getOrNull()?.let {
-                    commitMap[branch.name] = it
-                }
-            }
-
             _branchState.value = BranchUiState(
                 isLoading = false,
-                branches = branches,
-                branchCommits = commitMap,
+                branches = branchesResult.getOrElse { emptyList() },
                 error = branchesResult.exceptionOrNull()?.toUserMessage("브랜치 목록을 불러오지 못했습니다.")
             )
+        }
+    }
+
+    // 화면에 보이는 브랜치의 최신 커밋만 지연 로딩한다 (브랜치 수만큼 요청하지 않도록).
+    fun loadBranchCommit(owner: String, repoName: String, branchName: String) {
+        if (_branchState.value.branchCommits.containsKey(branchName)) return
+        viewModelScope.launch {
+            val repo = getRepo() ?: return@launch
+            repo.getBranchLatestCommit(owner, repoName, branchName).getOrNull()?.let { commit ->
+                _branchState.update { it.copy(branchCommits = it.branchCommits + (branchName to commit)) }
+            }
         }
     }
 

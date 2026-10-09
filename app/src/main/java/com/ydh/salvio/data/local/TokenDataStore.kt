@@ -9,6 +9,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import com.ydh.salvio.util.TokenCipher
 
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "salvio_prefs")
 
@@ -16,6 +17,7 @@ class TokenDataStore(private val context: Context) {
 
     companion object {
         private val TOKEN_KEY = stringPreferencesKey("github_token")
+        private val ENCRYPTED_TOKEN_KEY = stringPreferencesKey("github_token_enc")
         private val SELECTED_REPOS_KEY = stringPreferencesKey("selected_repos")
         private val FAVORITE_REPOS_KEY = stringPreferencesKey("favorite_repos")
         private val WATCHED_REPOS_KEY = stringPreferencesKey("watched_repos")
@@ -23,7 +25,11 @@ class TokenDataStore(private val context: Context) {
         private val THEME_MODE_KEY = stringPreferencesKey("theme_mode")
     }
 
-    val token: Flow<String?> = context.dataStore.data.map { it[TOKEN_KEY] }
+    // 암호화된 값이 있으면 그것을 복호화한다. 없으면 이전 버전의 평문 값을 사용하고,
+    // 다음 로그인 성공 시 saveToken이 암호화 형식으로 옮긴다.
+    val token: Flow<String?> = context.dataStore.data.map { prefs ->
+        prefs[ENCRYPTED_TOKEN_KEY]?.let { TokenCipher.decrypt(it) } ?: prefs[TOKEN_KEY]
+    }
 
     // 테마 모드 (SYSTEM / LIGHT / DARK). 미설정 시 null → SYSTEM으로 해석
     val themeMode: Flow<String?> = context.dataStore.data.map { it[THEME_MODE_KEY] }
@@ -33,11 +39,17 @@ class TokenDataStore(private val context: Context) {
     }
 
     suspend fun saveToken(token: String) {
-        context.dataStore.edit { it[TOKEN_KEY] = token }
+        context.dataStore.edit {
+            it[ENCRYPTED_TOKEN_KEY] = TokenCipher.encrypt(token)
+            it.remove(TOKEN_KEY)
+        }
     }
 
     suspend fun clearToken() {
-        context.dataStore.edit { it.remove(TOKEN_KEY) }
+        context.dataStore.edit {
+            it.remove(ENCRYPTED_TOKEN_KEY)
+            it.remove(TOKEN_KEY)
+        }
     }
 
     val selectedRepos: Flow<List<String>> = context.dataStore.data.map { prefs ->
