@@ -30,6 +30,19 @@ class ApiErrorTest {
         return HttpException(Response.error<Any>(errorBody, rawBuilder.build()))
     }
 
+    // ---- isAuthExpired ----
+
+    @Test
+    fun isAuthExpired_true_for401() {
+        assertTrue(httpException(401).isAuthExpired())
+    }
+
+    @Test
+    fun isAuthExpired_false_forOtherCodesAndNonHttp() {
+        assertFalse(httpException(403).isAuthExpired())
+        assertFalse(IOException("boom").isAuthExpired())
+    }
+
     // ---- httpCode ----
 
     @Test

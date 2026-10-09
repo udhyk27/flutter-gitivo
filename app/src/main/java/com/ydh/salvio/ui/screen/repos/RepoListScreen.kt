@@ -18,6 +18,7 @@ import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -79,9 +80,10 @@ fun RepoListScreen(
 
     // 에러 발생 시 SnackBar 표시
     LaunchedEffect(repoState) {
-        if (repoState is RepoListState.Error) {
+        val current = repoState
+        if (current is RepoListState.Error) {
             snackbarHostState.showSnackbar(
-                message = repoState.message,
+                message = current.message,
                 duration = SnackbarDuration.Long
             )
         }

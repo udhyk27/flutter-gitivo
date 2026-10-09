@@ -4,13 +4,13 @@ import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.ydh.salvio.SalvioApplication
-import com.ydh.salvio.data.local.TokenDataStore
 import com.ydh.salvio.util.Logger
 import kotlinx.coroutines.flow.first
+import java.io.IOException
 
 /**
- * 주기적으로 저장소 목록을 백그라운드에서 동기화하는 Worker.
- * WorkManager를 통해 스케줄되며, 네트워크가 없거나 토큰이 없으면 재시도한다.
+ * 주기적으로 저장소 목록을 백그라운드에서 갱신한다.
+ * 토큰이 없으면 할 일이 없으므로 성공으로 끝내고, 네트워크 오류만 재시도한다.
  */
 class RepoSyncWorker(
     context: Context,
@@ -18,36 +18,20 @@ class RepoSyncWorker(
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
-        return try {
-            val app = applicationContext as SalvioApplication
-            val dataStore = app.tokenDataStore
-            val token = dataStore.token.first()
+        val app = applicationContext as SalvioApplication
+        val token = app.tokenDataStore.token.first()
+        if (token.isNullOrBlank()) return Result.success()
 
-            if (token.isNullOrBlank()) {
-                Logger.d("RepoSyncWorker: No token found, skipping sync")
-                return Result.retry()
+        return app.githubRepository(token).getUserRepos(forceRefresh = true).fold(
+            onSuccess = {
+                Logger.i("RepoSyncWorker: synced ${it.size} repos")
+                Result.success()
+            },
+            onFailure = { e ->
+                Logger.e("RepoSyncWorker failed", e)
+                if (e is IOException) Result.retry() else Result.failure()
             }
-
-            val repo = app.githubRepository(token)
-            repo.getUserRepos(forceRefresh = true).fold(
-                onSuccess = {
-                    Logger.i("RepoSyncWorker: Synced ${it.size} repos")
-                    Result.success()
-                },
-                onFailure = { e ->
-                    Logger.e("RepoSyncWorker failed", e)
-                    // 네트워크 오류면 재시도, 인증 오류면 성공 처리
-                    if (e.message?.contains("Network") == true) {
-                        Result.retry()
-                    } else {
-                        Result.failure()
-                    }
-                }
-            )
-        } catch (e: Exception) {
-            Logger.e("RepoSyncWorker exception", e)
-            Result.retry()
-        }
+        )
     }
 
     companion object {

@@ -5,7 +5,6 @@ import com.google.gson.reflect.TypeToken
 import com.ydh.salvio.data.api.GitHubApi
 import com.ydh.salvio.data.local.*
 import com.ydh.salvio.data.model.*
-import com.ydh.salvio.util.Logger
 
 class GitHubRepository(
     private val api: GitHubApi,
