@@ -31,6 +31,10 @@ class RepoViewModel(application: Application) : AndroidViewModel(application) {
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
+    // 목록이 이미 있을 때 새로고침이 실패한 경우의 일회성 안내 메시지 (SnackBar 용)
+    private val _refreshError = MutableStateFlow<String?>(null)
+    val refreshError: StateFlow<String?> = _refreshError.asStateFlow()
+
     private val _selectedRepo = MutableStateFlow<GitHubRepo?>(null)
     val selectedRepo: StateFlow<GitHubRepo?> = _selectedRepo.asStateFlow()
 
@@ -65,11 +69,17 @@ class RepoViewModel(application: Application) : AndroidViewModel(application) {
                         _repoListState.value = RepoListState.Error("인증이 만료되었습니다. 다시 로그인하세요.")
                     } else if (!hasData) {
                         _repoListState.value = RepoListState.Error(e.toUserMessage("조회에 실패했습니다."))
+                    } else {
+                        _refreshError.value = e.toUserMessage("새로고침에 실패했습니다. 기존 목록을 표시합니다.")
                     }
                 }
             )
             _isRefreshing.value = false
         }
+    }
+
+    fun consumeRefreshError() {
+        _refreshError.value = null
     }
 
     fun selectRepo(repo: GitHubRepo) {

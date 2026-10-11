@@ -57,6 +57,7 @@ fun RepoListScreen(
     val favorites by repoViewModel.favoriteRepos.collectAsState()
     val watchedRepos by repoViewModel.watchedRepos.collectAsState()
     val isRefreshing by repoViewModel.isRefreshing.collectAsState()
+    val refreshError by repoViewModel.refreshError.collectAsState()
     val themeMode by themeViewModel.themeMode.collectAsState()
     val user = (authState as? AuthState.Success)?.user
 
@@ -79,13 +80,10 @@ fun RepoListScreen(
     LaunchedEffect(Unit) { repoViewModel.loadRepos() }
 
     // 에러 발생 시 SnackBar 표시
-    LaunchedEffect(repoState) {
-        val current = repoState
-        if (current is RepoListState.Error) {
-            snackbarHostState.showSnackbar(
-                message = current.message,
-                duration = SnackbarDuration.Long
-            )
+    LaunchedEffect(refreshError) {
+        refreshError?.let {
+            snackbarHostState.showSnackbar(message = it, duration = SnackbarDuration.Long)
+            repoViewModel.consumeRefreshError()
         }
     }
 

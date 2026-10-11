@@ -18,6 +18,17 @@ class GitHubRepository(
     private fun isExpired(cachedAt: Long, maxAgeMs: Long = cacheMaxAgeMs) =
         System.currentTimeMillis() - cachedAt > maxAgeMs
 
+    // 마지막 페이지 판정은 응답 개수 기준(필터링 전). 과도한 요청을 막기 위해 최대 페이지 수를 둔다.
+    private suspend fun <T> fetchAllPages(fetch: suspend (page: Int) -> List<T>): List<T> {
+        val all = mutableListOf<T>()
+        for (page in 1..MAX_PAGES) {
+            val batch = fetch(page)
+            all += batch
+            if (batch.size < PAGE_SIZE) break
+        }
+        return all
+    }
+
     suspend fun getUser(): Result<GitHubUser> = runCatching { api.getAuthenticatedUser() }
 
     suspend fun getUserRepos(forceRefresh: Boolean = false): Result<List<GitHubRepo>> = runCatching {
@@ -25,7 +36,7 @@ class GitHubRepository(
         if (!forceRefresh && !cached.isNullOrEmpty() && !isExpired(cached.first().cachedAt)) {
             return@runCatching cached.map { gson.fromJson(it.json, GitHubRepo::class.java) }
         }
-        val repos = api.getUserRepos(perPage = 100)
+        val repos = fetchAllPages { page -> api.getUserRepos(perPage = PAGE_SIZE, page = page) }
         dao?.insertRepos(repos.map { CachedRepo(it.fullName, gson.toJson(it)) })
         repos
     }
@@ -54,7 +65,7 @@ class GitHubRepository(
             val type = object : TypeToken<GitHubPullRequest>() {}.type
             return@runCatching cached.map { gson.fromJson(it.json, type) }
         }
-        val prs = api.getPullRequests(owner, repo, state = state, perPage = 100)
+        val prs = fetchAllPages { page -> api.getPullRequests(owner, repo, state = state, perPage = PAGE_SIZE, page = page) }
         dao?.deletePrs(repoFullName, state)
         dao?.insertPrs(prs.map { CachedPr("$repoFullName:${it.number}:$state", repoFullName, state, gson.toJson(it)) })
         prs
@@ -67,7 +78,7 @@ class GitHubRepository(
             val type = object : TypeToken<GitHubBranch>() {}.type
             return@runCatching cached.map { gson.fromJson(it.json, type) }
         }
-        val branches = api.getBranches(owner, repo)
+        val branches = fetchAllPages { page -> api.getBranches(owner, repo, perPage = PAGE_SIZE, page = page) }
         dao?.deleteBranches(repoFullName)
         dao?.insertBranches(branches.map { CachedBranch("$repoFullName:${it.name}", repoFullName, gson.toJson(it)) })
         branches
@@ -122,7 +133,8 @@ class GitHubRepository(
             val type = object : TypeToken<GitHubIssue>() {}.type
             return@runCatching cached.map { gson.fromJson(it.json, type) }
         }
-        val issues = api.getIssues(owner, repo, state).filter { it.pullRequest == null }
+        val issues = fetchAllPages { page -> api.getIssues(owner, repo, state, perPage = PAGE_SIZE, page = page) }
+            .filter { it.pullRequest == null }
         dao?.deleteIssues(repoFullName, state)
         dao?.insertIssues(issues.map { CachedIssue("$repoFullName:${it.number}:$state", repoFullName, state, gson.toJson(it)) })
         issues
@@ -216,6 +228,8 @@ class GitHubRepository(
 
     companion object {
         private val gson = Gson()
+        private const val PAGE_SIZE = 100
+        private const val MAX_PAGES = 10
     }
 
     suspend fun getCommitActivity(owner: String, repo: String, forceRefresh: Boolean = false): Result<List<CommitWeekActivity>> = runCatching {
