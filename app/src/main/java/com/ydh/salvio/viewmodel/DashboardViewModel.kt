@@ -11,6 +11,7 @@ import com.ydh.salvio.util.httpCode
 import com.ydh.salvio.util.toUserMessage
 import com.ydh.salvio.util.NetworkState
 import com.ydh.salvio.util.isAuthExpired
+import com.ydh.salvio.util.Logger
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -159,6 +160,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 branchesResult, contributorsResult, closedResult
             ).firstNotNullOfOrNull { it.exceptionOrNull() }
 
+            firstError?.let { Logger.e("loadDashboard failed for $owner/$repoName", it) }
             val errorMessage = firstError?.let {
                 if (it.isAuthExpired()) "인증이 만료되었습니다. 다시 로그인하세요."
                 else it.toUserMessage("대시보드를 불러오지 못했습니다.")

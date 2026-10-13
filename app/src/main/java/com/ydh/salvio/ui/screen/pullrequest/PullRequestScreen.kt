@@ -121,7 +121,7 @@ fun PullRequestScreen(
                         onRefresh = { dashboardViewModel.loadPullRequests(owner, repoName, forceRefresh = true) }
                     ) {
                         if (prs.isEmpty()) {
-                            EmptyState("${tabs[selectedTab]} PR이 없습니다.", Icons.Default.MergeType)
+                            EmptyState("${tabs[selectedTab]} PR이 없습니다.", Icons.Default.MergeType, hint = "아래로 당기면 목록을 새로고침합니다.")
                         } else {
                             LazyColumn(
                                 contentPadding = PaddingValues(Spacing.screen),

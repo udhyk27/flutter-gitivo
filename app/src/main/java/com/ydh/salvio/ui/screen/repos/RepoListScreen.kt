@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.painter.ColorPainter
 import coil.compose.AsyncImage
+import kotlinx.coroutines.launch
 import com.ydh.salvio.data.model.GitHubRepo
 import com.ydh.salvio.ui.component.EmptyState
 import com.ydh.salvio.ui.component.ErrorState
@@ -69,11 +70,14 @@ fun RepoListScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
 
+    val scope = rememberCoroutineScope()
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted) {
             pendingWatchRepoName?.let { repoViewModel.toggleWatch(it) }
+        } else {
+            scope.launch { snackbarHostState.showSnackbar("알림 권한이 없어 PR 알림을 켤 수 없습니다.") }
         }
         pendingWatchRepoName = null
     }
@@ -195,7 +199,15 @@ fun RepoListScreen(
 
                             if (sorted.isEmpty()) {
                                 item(key = "empty") {
-                                    EmptyState("저장소가 없습니다.", Icons.Default.FolderOff)
+                                    EmptyState(
+                                    "저장소가 없습니다.",
+                                    Icons.Default.FolderOff,
+                                    hint = if (searchQuery.isNotBlank() || showFavoritesOnly) {
+                                        "검색어나 즐겨찾기 필터를 바꿔 보세요."
+                                    } else {
+                                        "토큰에 repo, read:user 권한이 있는지 확인하세요."
+                                    }
+                                )
                                 }
                             } else {
                                 if (favRepos.isNotEmpty() && !showFavoritesOnly) {

@@ -103,7 +103,8 @@ fun IssueScreen(
                         if (issues.isEmpty()) {
                             EmptyState(
                                 if (selectedTab == 0) "열린 이슈가 없습니다." else "닫힌 이슈가 없습니다.",
-                                Icons.Default.CheckCircle
+                                Icons.Default.CheckCircle,
+                                hint = "아래로 당기면 목록을 새로고침합니다."
                             )
                         } else {
                             LazyColumn(

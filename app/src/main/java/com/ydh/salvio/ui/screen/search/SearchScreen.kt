@@ -138,7 +138,7 @@ fun SearchScreen(
                 state.results != null -> {
                     val results = state.results!!
                     if (results.items.isEmpty()) {
-                        EmptyState("\"${state.query}\"에 대한 결과가 없습니다.", Icons.Default.SearchOff)
+                        EmptyState("\"${state.query}\"에 대한 결과가 없습니다.", Icons.Default.SearchOff, hint = "다른 키워드로 다시 검색해 보세요.")
                     } else {
                         Column {
                             Row(

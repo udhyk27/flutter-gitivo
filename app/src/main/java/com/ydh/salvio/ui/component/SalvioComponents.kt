@@ -35,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ydh.salvio.ui.theme.*
@@ -172,15 +173,20 @@ fun ErrorState(
 fun EmptyState(
     message: String,
     icon: ImageVector,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    hint: String? = null
 ) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(Spacing.md)
+            verticalArrangement = Arrangement.spacedBy(Spacing.sm),
+            modifier = Modifier.padding(horizontal = Spacing.xl)
         ) {
             Icon(icon, contentDescription = null, tint = SalvioTheme.colors.textSecondary, modifier = Modifier.size(44.dp))
-            Text(message, color = SalvioTheme.colors.textSecondary, style = MaterialTheme.typography.bodyMedium)
+            Text(message, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium)
+            hint?.let {
+                Text(it, color = SalvioTheme.colors.textSecondary, style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center)
+            }
         }
     }
 }

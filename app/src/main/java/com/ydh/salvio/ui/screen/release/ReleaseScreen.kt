@@ -74,7 +74,7 @@ fun ReleaseScreen(
                 modifier = Modifier.padding(paddingValues)
             ) {
                 if (state.releases.isEmpty()) {
-                    EmptyState("릴리즈가 없습니다.", Icons.Default.LocalOffer)
+                    EmptyState("릴리즈가 없습니다.", Icons.Default.LocalOffer, hint = "GitHub에서 릴리즈를 만들면 여기에 표시됩니다.")
                 } else {
                     LazyColumn(
                         contentPadding = PaddingValues(Spacing.screen),
