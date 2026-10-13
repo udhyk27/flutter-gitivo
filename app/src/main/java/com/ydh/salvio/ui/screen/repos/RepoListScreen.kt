@@ -28,6 +28,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.painter.ColorPainter
 import coil.compose.AsyncImage
 import com.ydh.salvio.data.model.GitHubRepo
 import com.ydh.salvio.ui.component.EmptyState
@@ -120,6 +121,7 @@ fun RepoListScreen(
                     }
                     user?.let {
                         AsyncImage(
+                            placeholder = ColorPainter(SalvioTheme.colors.border),
                             model = it.avatarUrl,
                             contentDescription = "사용자 아바타 - 설정",
                             contentScale = ContentScale.Crop,

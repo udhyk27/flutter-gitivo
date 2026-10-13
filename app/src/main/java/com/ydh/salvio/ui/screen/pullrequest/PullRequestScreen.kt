@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.painter.ColorPainter
 import coil.compose.AsyncImage
 import com.ydh.salvio.data.model.CheckRunsResponse
 import com.ydh.salvio.data.model.GitHubPrReview
@@ -201,6 +202,7 @@ private fun PullRequestCard(
                     ) {
                         Text(text = "#${pr.number}", fontSize = 12.sp, color = SalvioTheme.colors.textSecondary)
                         AsyncImage(
+                            placeholder = ColorPainter(SalvioTheme.colors.border),
                             model = pr.user.avatarUrl,
                             contentDescription = null,
                             modifier = Modifier.size(16.dp).clip(CircleShape)

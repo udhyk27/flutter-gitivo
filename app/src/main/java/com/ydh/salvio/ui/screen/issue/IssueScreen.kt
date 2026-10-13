@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.painter.ColorPainter
 import coil.compose.AsyncImage
 import com.ydh.salvio.data.model.GitHubIssue
 import com.ydh.salvio.data.model.GitHubLabel
@@ -158,6 +159,7 @@ private fun IssueCard(issue: GitHubIssue, onClick: () -> Unit) {
                     ) {
                         Text(text = "#${issue.number}", fontSize = 12.sp, color = SalvioTheme.colors.textSecondary)
                         AsyncImage(
+                            placeholder = ColorPainter(SalvioTheme.colors.border),
                             model = issue.user.avatarUrl,
                             contentDescription = null,
                             modifier = Modifier.size(16.dp).clip(CircleShape)

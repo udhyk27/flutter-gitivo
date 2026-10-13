@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.painter.ColorPainter
 import coil.compose.AsyncImage
 import com.ydh.salvio.data.model.GitHubRelease
 import com.ydh.salvio.ui.component.EmptyState
@@ -141,6 +142,7 @@ private fun ReleaseCard(release: GitHubRelease, onClick: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 AsyncImage(
+                    placeholder = ColorPainter(SalvioTheme.colors.border),
                     model = release.author.avatarUrl,
                     contentDescription = null,
                     modifier = Modifier.size(16.dp).clip(CircleShape)

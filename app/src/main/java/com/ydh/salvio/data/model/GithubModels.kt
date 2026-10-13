@@ -278,7 +278,6 @@ data class CodeSearchResponse(
 
 data class GitHubRepoStats(
     val repoFullName: String,
-    val commitCount: Int,
     val openPrCount: Int,
     val mergedPrCount: Int,
     val closedPrCount: Int,

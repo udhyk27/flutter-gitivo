@@ -18,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.painter.ColorPainter
 import coil.compose.AsyncImage
 import com.ydh.salvio.data.model.GitHubCommit
 import com.ydh.salvio.ui.component.ErrorState
@@ -259,6 +260,7 @@ private fun CommitItem(commit: GitHubCommit, onClick: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         AsyncImage(
+            placeholder = ColorPainter(SalvioTheme.colors.border),
             model = commit.author?.avatarUrl,
             contentDescription = "커밋 작성자 아바타",
             contentScale = ContentScale.Crop,
@@ -337,6 +339,7 @@ private fun ContributorsSection(state: DashboardUiState) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         AsyncImage(
+                            placeholder = ColorPainter(SalvioTheme.colors.border),
                             model = contributor.avatarUrl,
                             contentDescription = "기여자 ${contributor.login} 아바타",
                             contentScale = ContentScale.Crop,

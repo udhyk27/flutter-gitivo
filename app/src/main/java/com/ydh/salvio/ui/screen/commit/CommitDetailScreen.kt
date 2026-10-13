@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.painter.ColorPainter
 import coil.compose.AsyncImage
 import com.ydh.salvio.data.model.CommitFile
 import com.ydh.salvio.data.model.GitHubCommitDetail
@@ -116,6 +117,7 @@ private fun CommitDetailContent(detail: GitHubCommitDetail, modifier: Modifier =
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         AsyncImage(
+                            placeholder = ColorPainter(SalvioTheme.colors.border),
                             model = detail.author?.avatarUrl,
                             contentDescription = null,
                             modifier = Modifier.size(32.dp).clip(CircleShape).background(SalvioTheme.colors.border)

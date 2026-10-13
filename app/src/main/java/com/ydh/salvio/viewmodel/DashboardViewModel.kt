@@ -171,7 +171,6 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 // → 화면이 전체 에러 상태를 보여주도록 한다.
                 stats = if (repoInfoResult.isSuccess) GitHubRepoStats(
                     repoFullName = "$owner/$repoName",
-                    commitCount = commitsResult.getOrElse { emptyList() }.size,
                     openPrCount = openPrsResult.getOrElse { emptyList() }.size,
                     mergedPrCount = closedList.count { it.mergedAt != null },
                     closedPrCount = closedList.count { it.mergedAt == null },
