@@ -7,6 +7,9 @@ import androidx.core.app.NotificationCompat
 import androidx.work.*
 import com.ydh.salvio.SalvioApplication
 import com.ydh.salvio.data.local.TokenDataStore
+import com.ydh.salvio.util.Logger
+import com.ydh.salvio.util.httpCode
+import com.ydh.salvio.util.isAuthExpired
 import kotlinx.coroutines.flow.first
 import java.util.concurrent.TimeUnit
 
@@ -30,8 +33,25 @@ class PrCheckWorker(
             val (owner, repoName) = parts
 
             // 백그라운드 감시는 항상 최신 데이터를 가져와야 한다 (캐시 사용 시 새 PR 누락).
-            val prs = repo.getPullRequests(owner, repoName, "open", forceRefresh = true)
-                .getOrElse { anyFailed = true; return@forEach }
+            val prs = repo.getPullRequests(owner, repoName, "open", forceRefresh = true).getOrElse { e ->
+                when {
+                    // 토큰이 폐기됐으면 재시도해도 소용없으므로 중단한다.
+                    e.isAuthExpired() -> {
+                        Logger.authFailed("PR 감시 중단: 토큰 만료")
+                        return Result.failure()
+                    }
+                    // 저장소가 삭제되었거나 이름이 바뀐 경우 이 저장소만 건너뛴다.
+                    e.httpCode() == 404 -> {
+                        Logger.w("PR 감시 건너뜀: $fullName 을 찾을 수 없습니다.")
+                        return@forEach
+                    }
+                    else -> {
+                        Logger.e("PR 감시 실패: $fullName", e)
+                        anyFailed = true
+                        return@forEach
+                    }
+                }
+            }
 
             val currentNumbers = prs.map { it.number }.toSet()
             val lastNumbers = dataStore.getLastPrNumbers(fullName)
