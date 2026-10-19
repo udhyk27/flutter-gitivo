@@ -113,7 +113,8 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             val code = try {
                 api.requestDeviceCode(clientId, scope = "repo read:user notifications")
             } catch (e: Exception) {
-                _deviceFlow.value = DeviceFlowState.Error("로그인 시작에 실패했습니다. (${e.message})")
+                Logger.e("device flow start failed", e)
+                _deviceFlow.value = DeviceFlowState.Error(e.toUserMessage("로그인 시작에 실패했습니다. 네트워크를 확인한 뒤 다시 시도하세요."))
                 return@launch
             }
 
