@@ -127,6 +127,11 @@ fun PullRequestScreen(
                                 contentPadding = PaddingValues(Spacing.screen),
                                 verticalArrangement = Arrangement.spacedBy(Spacing.sm)
                             ) {
+                                state.detailError?.let { message ->
+                                    item(key = "detail-error") {
+                                        Text(message, fontSize = 12.sp, color = SalvioTheme.colors.danger)
+                                    }
+                                }
                                 items(prs, key = { it.number }) { pr ->
                                     PullRequestCard(
                                         pr = pr,
@@ -134,6 +139,7 @@ fun PullRequestScreen(
                                         reviews = state.prReviews[pr.number] ?: emptyList(),
                                         checkRuns = state.prCheckRuns[pr.number],
                                         files = state.prFiles[pr.number],
+                                        filesFailed = state.fileErrors.contains(pr.number),
                                         isExpanded = expandedPrNumber == pr.number,
                                         onExpandToggle = {
                                             if (expandedPrNumber == pr.number) {
@@ -163,6 +169,7 @@ private fun PullRequestCard(
     reviews: List<GitHubPrReview>,
     checkRuns: CheckRunsResponse? = null,
     files: List<PullRequestFile>? = null,
+    filesFailed: Boolean = false,
     isExpanded: Boolean = false,
     onExpandToggle: () -> Unit = {}
 ) {
@@ -274,7 +281,9 @@ private fun PullRequestCard(
                 Spacer(modifier = Modifier.height(Spacing.sm))
                 HorizontalDivider(color = SalvioTheme.colors.borderMuted, thickness = 0.5.dp)
                 Spacer(modifier = Modifier.height(Spacing.sm))
-                if (files == null) {
+                if (files == null && filesFailed) {
+                    Text("파일 목록을 불러오지 못했습니다. 카드를 접었다 다시 펼치면 재시도합니다.", fontSize = 12.sp, color = SalvioTheme.colors.danger)
+                } else if (files == null) {
                     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                     }

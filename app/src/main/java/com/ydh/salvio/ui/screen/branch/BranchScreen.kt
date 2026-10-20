@@ -93,6 +93,8 @@ fun BranchScreen(
                             BranchCard(
                                 branch = branch,
                                 latestCommit = latestCommit,
+                                commitFailed = state.commitErrors.contains(branch.name),
+                                onRetryCommit = { dashboardViewModel.loadBranchCommit(owner, repoName, branch.name) },
                                 onClick = {
                                     val url = "https://github.com/$owner/$repoName/tree/${branch.name}"
                                     try {
@@ -109,7 +111,13 @@ fun BranchScreen(
 }
 
 @Composable
-private fun BranchCard(branch: GitHubBranch, latestCommit: GitHubCommit?, onClick: () -> Unit) {
+private fun BranchCard(
+    branch: GitHubBranch,
+    latestCommit: GitHubCommit?,
+    commitFailed: Boolean,
+    onRetryCommit: () -> Unit,
+    onClick: () -> Unit
+) {
     val commitDate = latestCommit?.commit?.author?.date
     val isStale = commitDate?.let { isOlderThanDays(it, 30) } ?: false
 
@@ -157,6 +165,14 @@ private fun BranchCard(branch: GitHubBranch, latestCommit: GitHubCommit?, onClic
                         fontSize = 11.sp,
                         color = SalvioTheme.colors.textTertiary
                     )
+                }
+                if (latestCommit == null && commitFailed) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("커밋 정보를 불러오지 못했습니다.", fontSize = 12.sp, color = SalvioTheme.colors.danger)
+                        TextButton(onClick = onRetryCommit, contentPadding = PaddingValues(horizontal = Spacing.xs)) {
+                            Text("다시 시도", fontSize = 12.sp)
+                        }
+                    }
                 }
             }
             Text(

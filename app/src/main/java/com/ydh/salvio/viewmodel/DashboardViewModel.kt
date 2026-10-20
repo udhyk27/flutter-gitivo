@@ -39,6 +39,8 @@ data class PrUiState(
     val prReviews: Map<Int, List<GitHubPrReview>> = emptyMap(),
     val prCheckRuns: Map<Int, CheckRunsResponse> = emptyMap(),
     val prFiles: Map<Int, List<PullRequestFile>> = emptyMap(),
+    val detailError: String? = null,
+    val fileErrors: Set<Int> = emptySet(),
     val error: String? = null
 )
 
@@ -66,6 +68,7 @@ data class BranchUiState(
     val isLoading: Boolean = false,
     val branches: List<GitHubBranch> = emptyList(),
     val branchCommits: Map<String, GitHubCommit> = emptyMap(),
+    val commitErrors: Set<String> = emptySet(),
     val error: String? = null
 )
 
@@ -231,15 +234,20 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             val repo = getRepo() ?: return@launch
             val reviewMap = mutableMapOf<Int, List<GitHubPrReview>>()
             val checkRunMap = mutableMapOf<Int, CheckRunsResponse>()
+            var anyFailed = false
+            _prState.update { it.copy(detailError = null) }
 
             prs.take(20).forEach { pr ->
-                repo.getPrReviews(owner, repoName, pr.number, forceRefresh).getOrNull()?.let { reviews ->
-                    reviewMap[pr.number] = reviews
-                }
-                repo.getCheckRuns(owner, repoName, pr.head.sha, forceRefresh).getOrNull()?.let { runs ->
-                    checkRunMap[pr.number] = runs
-                }
+                repo.getPrReviews(owner, repoName, pr.number, forceRefresh)
+                    .onSuccess { reviewMap[pr.number] = it }
+                    .onFailure { e -> anyFailed = true; Logger.e("PR ${pr.number} reviews failed", e) }
+                repo.getCheckRuns(owner, repoName, pr.head.sha, forceRefresh)
+                    .onSuccess { checkRunMap[pr.number] = it }
+                    .onFailure { e -> anyFailed = true; Logger.e("PR ${pr.number} check runs failed", e) }
                 _prState.update { it.copy(prReviews = reviewMap.toMap(), prCheckRuns = checkRunMap.toMap()) }
+            }
+            if (anyFailed) {
+                _prState.update { it.copy(detailError = "일부 PR의 리뷰·CI 상태를 불러오지 못했습니다.") }
             }
         }
     }
@@ -302,9 +310,16 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         if (_branchState.value.branchCommits.containsKey(branchName)) return
         viewModelScope.launch {
             val repo = getRepo() ?: return@launch
-            repo.getBranchLatestCommit(owner, repoName, branchName).getOrNull()?.let { commit ->
-                _branchState.update { it.copy(branchCommits = it.branchCommits + (branchName to commit)) }
-            }
+            repo.getBranchLatestCommit(owner, repoName, branchName)
+                .onSuccess { commit ->
+                    _branchState.update {
+                        it.copy(branchCommits = it.branchCommits + (branchName to commit), commitErrors = it.commitErrors - branchName)
+                    }
+                }
+                .onFailure { e ->
+                    Logger.e("branch $branchName commit failed", e)
+                    _branchState.update { it.copy(commitErrors = it.commitErrors + branchName) }
+                }
         }
     }
 
@@ -395,9 +410,14 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     fun loadPrFiles(owner: String, repoName: String, prNumber: Int) {
         viewModelScope.launch {
             val repo = getRepo() ?: return@launch
-            repo.getPrFiles(owner, repoName, prNumber).getOrNull()?.let { files ->
-                _prState.update { it.copy(prFiles = it.prFiles + (prNumber to files)) }
-            }
+            repo.getPrFiles(owner, repoName, prNumber)
+                .onSuccess { files ->
+                    _prState.update { it.copy(prFiles = it.prFiles + (prNumber to files), fileErrors = it.fileErrors - prNumber) }
+                }
+                .onFailure { e ->
+                    Logger.e("PR $prNumber files failed", e)
+                    _prState.update { it.copy(fileErrors = it.fileErrors + prNumber) }
+                }
         }
     }
 
