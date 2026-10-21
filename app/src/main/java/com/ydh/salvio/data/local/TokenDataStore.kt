@@ -31,6 +31,12 @@ class TokenDataStore(private val context: Context) {
         prefs[ENCRYPTED_TOKEN_KEY]?.let { TokenCipher.decrypt(it) } ?: prefs[TOKEN_KEY]
     }
 
+    // 암호화된 토큰이 저장돼 있지만 복호화할 수 없는 상태인지 (키 손실, 백업 복원 등)
+    suspend fun hasUnreadableToken(): Boolean {
+        val encrypted = context.dataStore.data.first()[ENCRYPTED_TOKEN_KEY] ?: return false
+        return TokenCipher.decrypt(encrypted) == null
+    }
+
     // 테마 모드 (SYSTEM / LIGHT / DARK). 미설정 시 null → SYSTEM으로 해석
     val themeMode: Flow<String?> = context.dataStore.data.map { it[THEME_MODE_KEY] }
 

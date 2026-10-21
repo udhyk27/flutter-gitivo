@@ -65,6 +65,10 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             val token = dataStore.token.first()
             if (!token.isNullOrBlank()) {
                 loginWithToken(token)
+            } else if (dataStore.hasUnreadableToken()) {
+                Logger.authFailed("저장된 토큰 복호화 실패")
+                dataStore.clearToken()
+                _authState.value = AuthState.Error("저장된 로그인 정보를 읽을 수 없습니다. 다시 로그인해 주세요.")
             }
         }
     }
