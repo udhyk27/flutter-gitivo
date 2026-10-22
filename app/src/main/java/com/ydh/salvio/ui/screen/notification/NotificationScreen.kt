@@ -39,6 +39,14 @@ fun NotificationScreen(
 
     LaunchedEffect(Unit) { notificationViewModel.load() }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(state.actionError) {
+        state.actionError?.let {
+            snackbarHostState.showSnackbar(it)
+            notificationViewModel.consumeActionError()
+        }
+    }
+
     if (showMarkAllDialog) {
         AlertDialog(
             onDismissRequest = { showMarkAllDialog = false },
@@ -82,6 +90,7 @@ fun NotificationScreen(
                 }
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         when {
