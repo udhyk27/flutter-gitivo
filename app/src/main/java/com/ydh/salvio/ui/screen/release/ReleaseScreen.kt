@@ -1,7 +1,6 @@
 package com.ydh.salvio.ui.screen.release
 
-import android.content.Intent
-import android.net.Uri
+import com.ydh.salvio.util.openInBrowser
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -84,9 +83,7 @@ fun ReleaseScreen(
                             ReleaseCard(
                                 release = release,
                                 onClick = {
-                                    try {
-                                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(release.htmlUrl)))
-                                    } catch (_: Exception) {}
+                                    context.openInBrowser(release.htmlUrl)
                                 }
                             )
                         }

@@ -1,7 +1,6 @@
 package com.ydh.salvio.ui.screen.branch
 
-import android.content.Intent
-import android.net.Uri
+import com.ydh.salvio.util.openInBrowser
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -97,9 +96,7 @@ fun BranchScreen(
                                 onRetryCommit = { dashboardViewModel.loadBranchCommit(owner, repoName, branch.name) },
                                 onClick = {
                                     val url = "https://github.com/$owner/$repoName/tree/${branch.name}"
-                                    try {
-                                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                                    } catch (_: Exception) {}
+                                    context.openInBrowser(url)
                                 }
                             )
                         }

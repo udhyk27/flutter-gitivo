@@ -1,7 +1,6 @@
 package com.ydh.salvio.ui.screen.pullrequest
 
-import android.content.Intent
-import android.net.Uri
+import com.ydh.salvio.util.openInBrowser
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -221,9 +220,7 @@ private fun PullRequestCard(
                 val context = LocalContext.current
                 IconButton(
                     onClick = {
-                        try {
-                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(pr.htmlUrl)))
-                        } catch (_: Exception) {}
+                        context.openInBrowser(pr.htmlUrl)
                     },
                     modifier = Modifier.size(28.dp)
                 ) {

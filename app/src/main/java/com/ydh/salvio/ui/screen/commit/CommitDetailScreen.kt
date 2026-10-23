@@ -1,7 +1,6 @@
 package com.ydh.salvio.ui.screen.commit
 
-import android.content.Intent
-import android.net.Uri
+import com.ydh.salvio.util.openInBrowser
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -69,9 +68,7 @@ fun CommitDetailScreen(
                     val context = LocalContext.current
                     state.detail?.htmlUrl?.let { url ->
                         IconButton(onClick = {
-                            try {
-                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-                            } catch (_: Exception) {}
+                            context.openInBrowser(url)
                         }) {
                             Icon(Icons.Default.OpenInNew, contentDescription = "GitHub에서 열기")
                         }

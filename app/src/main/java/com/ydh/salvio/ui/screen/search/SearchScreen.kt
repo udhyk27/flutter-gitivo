@@ -1,7 +1,6 @@
 package com.ydh.salvio.ui.screen.search
 
-import android.content.Intent
-import android.net.Uri
+import com.ydh.salvio.util.openInBrowser
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -193,9 +192,7 @@ private fun SearchResultCard(item: CodeSearchItem) {
     SalvioCard(
         modifier = Modifier.fillMaxWidth(),
         onClick = {
-            try {
-                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(item.htmlUrl)))
-            } catch (_: Exception) {}
+            context.openInBrowser(item.htmlUrl)
         }
     ) {
         Column(modifier = Modifier.padding(Spacing.md)) {

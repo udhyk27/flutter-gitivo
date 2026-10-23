@@ -1,7 +1,6 @@
 package com.ydh.salvio.ui.screen.issue
 
-import android.content.Intent
-import android.net.Uri
+import com.ydh.salvio.util.openInBrowser
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -115,9 +114,7 @@ fun IssueScreen(
                                     IssueCard(
                                         issue = issue,
                                         onClick = {
-                                            try {
-                                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(issue.htmlUrl)))
-                                            } catch (_: Exception) {}
+                                            context.openInBrowser(issue.htmlUrl)
                                         }
                                     )
                                 }
