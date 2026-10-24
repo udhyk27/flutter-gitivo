@@ -207,14 +207,14 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             val openList = openResult.getOrElse { emptyList() }
             val closedList = closedResult.getOrElse { emptyList() }
 
+            val firstError = listOf(openResult, closedResult).firstNotNullOfOrNull { it.exceptionOrNull() }
+            firstError?.let { Logger.e("loadPullRequests failed", it) }
             _prState.value = _prState.value.copy(
                 isLoading = false,
                 openPrs = openList,
                 closedPrs = closedList.filter { it.mergedAt == null },
                 mergedPrs = closedList.filter { it.mergedAt != null },
-                error = listOf(openResult, closedResult)
-                    .firstNotNullOfOrNull { it.exceptionOrNull() }
-                    ?.toUserMessage("PR을 불러오지 못했습니다.")
+                error = firstError?.toUserMessage("PR을 불러오지 못했습니다.")
             )
 
             // 리뷰 + CI 상태 비동기 로드
@@ -263,13 +263,13 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             val closed = async { repo.getIssues(owner, repoName, "closed", forceRefresh) }
             val openResult = open.await()
             val closedResult = closed.await()
+            val firstError = listOf(openResult, closedResult).firstNotNullOfOrNull { it.exceptionOrNull() }
+            firstError?.let { Logger.e("loadIssues failed", it) }
             _issueState.value = IssueUiState(
                 isLoading = false,
                 openIssues = openResult.getOrElse { emptyList() },
                 closedIssues = closedResult.getOrElse { emptyList() },
-                error = listOf(openResult, closedResult)
-                    .firstNotNullOfOrNull { it.exceptionOrNull() }
-                    ?.toUserMessage("이슈를 불러오지 못했습니다.")
+                error = firstError?.toUserMessage("이슈를 불러오지 못했습니다.")
             )
         }
     }
@@ -283,7 +283,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             }
             repo.getReleases(owner, repoName, forceRefresh).fold(
                 onSuccess = { _releaseState.value = ReleaseUiState(releases = it) },
-                onFailure = { _releaseState.value = ReleaseUiState(error = it.toUserMessage("릴리스를 불러오지 못했습니다.")) }
+                onFailure = {
+                    Logger.e("loadReleases failed", it)
+                    _releaseState.value = ReleaseUiState(error = it.toUserMessage("릴리스를 불러오지 못했습니다."))
+                }
             )
         }
     }
@@ -297,6 +300,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             }
 
             val branchesResult = repo.getBranches(owner, repoName, forceRefresh)
+            branchesResult.exceptionOrNull()?.let { Logger.e("loadBranches failed", it) }
             _branchState.value = BranchUiState(
                 isLoading = false,
                 branches = branchesResult.getOrElse { emptyList() },
@@ -332,7 +336,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             }
             repo.getCommitDetail(owner, repoName, sha).fold(
                 onSuccess = { _commitDetailState.value = CommitDetailUiState(detail = it) },
-                onFailure = { _commitDetailState.value = CommitDetailUiState(error = it.toUserMessage("커밋 정보를 불러오지 못했습니다.")) }
+                onFailure = {
+                    Logger.e("loadCommitDetail failed", it)
+                    _commitDetailState.value = CommitDetailUiState(error = it.toUserMessage("커밋 정보를 불러오지 못했습니다."))
+                }
             )
         }
     }
@@ -368,6 +375,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             val firstError = listOf(contributorsResult, commitsResult, activityResult, weeklyStatsResult)
                 .firstNotNullOfOrNull { it.exceptionOrNull() }
 
+            firstError?.let { Logger.e("loadStats failed", it) }
             _statsState.value = StatsUiState(
                 isLoading = false,
                 contributors = contributorsResult.getOrElse { emptyList() },
@@ -392,6 +400,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             repo.searchCode(owner, repoName, query).fold(
                 onSuccess = { _searchState.value = SearchUiState(results = it, query = query) },
                 onFailure = {
+                    Logger.e("searchCode failed", it)
                     val msg = when (it.httpCode()) {
                         403 -> "검색 권한이 없습니다."
                         422 -> "검색어를 다시 확인해주세요."

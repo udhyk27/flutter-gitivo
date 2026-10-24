@@ -45,7 +45,10 @@ class NotificationViewModel(application: Application) : AndroidViewModel(applica
             }
             repo.getNotifications().fold(
                 onSuccess = { _state.value = NotificationUiState(notifications = it) },
-                onFailure = { _state.value = _state.value.copy(isLoading = false, error = it.toUserMessage("알림을 불러오지 못했습니다.")) }
+                onFailure = {
+                    Logger.e("notifications load failed", it)
+                    _state.value = _state.value.copy(isLoading = false, error = it.toUserMessage("알림을 불러오지 못했습니다."))
+                }
             )
         }
     }
