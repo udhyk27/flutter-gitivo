@@ -39,6 +39,16 @@ class RepoViewModel(application: Application) : AndroidViewModel(application) {
     private val _selectedRepo = MutableStateFlow<GitHubRepo?>(null)
     val selectedRepo: StateFlow<GitHubRepo?> = _selectedRepo.asStateFlow()
 
+    val backgroundSync: StateFlow<Boolean> = dataStore.backgroundSyncEnabled
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    fun setBackgroundSync(enabled: Boolean) {
+        viewModelScope.launch {
+            dataStore.setBackgroundSyncEnabled(enabled)
+            app.setRepoSyncEnabled(enabled)
+        }
+    }
+
     val favoriteRepos: StateFlow<Set<String>> = dataStore.favoriteRepos
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptySet())
 

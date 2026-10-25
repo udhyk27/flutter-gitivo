@@ -10,6 +10,11 @@ import com.ydh.salvio.data.local.TokenDataStore
 import com.ydh.salvio.data.repository.GitHubRepository
 import com.ydh.salvio.data.worker.PrCheckWorker
 import com.ydh.salvio.data.worker.RepoSyncWorker
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
 class SalvioApplication : Application() {
@@ -17,6 +22,7 @@ class SalvioApplication : Application() {
     lateinit var database: AppDatabase
 
     private var cachedRepository: Pair<String, GitHubRepository>? = null
+    private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     /**
      * 토큰에 대응하는 GitHubRepository를 반환한다.
@@ -45,22 +51,24 @@ class SalvioApplication : Application() {
         tokenDataStore = TokenDataStore(this)
         database = AppDatabase.getInstance(this)
         PrCheckWorker.ensureChannel(this)
-        scheduleRepoSync()
+        appScope.launch {
+            // 이전 버전이 예약한 작업도 설정에 맞춰 정리한다.
+            setRepoSyncEnabled(tokenDataStore.backgroundSyncEnabled.first())
+        }
     }
 
-    /**
-     * 주기적인 저장소 동기화를 스케줄한다.
-     * 사용자 설정으로 비활성화 가능하게 만들 수 있다.
-     */
-    private fun scheduleRepoSync() {
-        val syncRequest = PeriodicWorkRequestBuilder<RepoSyncWorker>(
-            15, TimeUnit.MINUTES
-        ).build()
-
-        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
-            RepoSyncWorker.UNIQUE_WORK_NAME,
-            ExistingPeriodicWorkPolicy.KEEP,
-            syncRequest
-        )
+    /** 주기적인 저장소 동기화를 켜거나 끈다. */
+    fun setRepoSyncEnabled(enabled: Boolean) {
+        val workManager = WorkManager.getInstance(this)
+        if (enabled) {
+            val request = PeriodicWorkRequestBuilder<RepoSyncWorker>(15, TimeUnit.MINUTES).build()
+            workManager.enqueueUniquePeriodicWork(
+                RepoSyncWorker.UNIQUE_WORK_NAME,
+                ExistingPeriodicWorkPolicy.KEEP,
+                request
+            )
+        } else {
+            workManager.cancelUniqueWork(RepoSyncWorker.UNIQUE_WORK_NAME)
+        }
     }
 }

@@ -61,6 +61,7 @@ fun RepoListScreen(
     val isRefreshing by repoViewModel.isRefreshing.collectAsState()
     val refreshError by repoViewModel.refreshError.collectAsState()
     val themeMode by themeViewModel.themeMode.collectAsState()
+    val backgroundSync by repoViewModel.backgroundSync.collectAsState()
     val user = (authState as? AuthState.Success)?.user
 
     var searchQuery by rememberSaveable { mutableStateOf("") }
@@ -96,6 +97,8 @@ fun RepoListScreen(
         SettingsDialog(
             themeMode = themeMode,
             onThemeModeChange = { themeViewModel.setThemeMode(it) },
+            backgroundSync = backgroundSync,
+            onBackgroundSyncChange = { repoViewModel.setBackgroundSync(it) },
             onLogout = {
                 showSettingsDialog = false
                 authViewModel.logout()
@@ -262,6 +265,8 @@ private fun ListLabel(text: String, top: androidx.compose.ui.unit.Dp = 0.dp) {
 private fun SettingsDialog(
     themeMode: ThemeMode,
     onThemeModeChange: (ThemeMode) -> Unit,
+    backgroundSync: Boolean,
+    onBackgroundSyncChange: (Boolean) -> Unit,
     onLogout: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -279,6 +284,28 @@ private fun SettingsDialog(
                 ThemeOptionRow("시스템 설정", Icons.Default.BrightnessAuto, themeMode == ThemeMode.SYSTEM) { onThemeModeChange(ThemeMode.SYSTEM) }
                 ThemeOptionRow("라이트", Icons.Default.LightMode, themeMode == ThemeMode.LIGHT) { onThemeModeChange(ThemeMode.LIGHT) }
                 ThemeOptionRow("다크", Icons.Default.DarkMode, themeMode == ThemeMode.DARK) { onThemeModeChange(ThemeMode.DARK) }
+
+                Spacer(modifier = Modifier.height(Spacing.sm))
+                Text(
+                    "동기화",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = SalvioTheme.colors.textSecondary,
+                    modifier = Modifier.padding(bottom = Spacing.xs)
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = Spacing.xs, horizontal = Spacing.sm),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("백그라운드 자동 갱신", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
+                        Text(
+                            "15분마다 저장소 목록을 갱신합니다. API 사용량이 늘어납니다.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = SalvioTheme.colors.textSecondary
+                        )
+                    }
+                    Switch(checked = backgroundSync, onCheckedChange = onBackgroundSyncChange)
+                }
 
                 Spacer(modifier = Modifier.height(Spacing.sm))
                 HorizontalDivider(color = SalvioTheme.colors.borderMuted, thickness = 0.5.dp)

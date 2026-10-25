@@ -3,6 +3,7 @@ package com.ydh.salvio.data.local
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -23,6 +24,7 @@ class TokenDataStore(private val context: Context) {
         private val WATCHED_REPOS_KEY = stringPreferencesKey("watched_repos")
         private val LAST_PR_IDS_KEY = stringPreferencesKey("last_pr_ids")
         private val THEME_MODE_KEY = stringPreferencesKey("theme_mode")
+        private val BACKGROUND_SYNC_KEY = booleanPreferencesKey("background_sync")
     }
 
     // 암호화된 값이 있으면 그것을 복호화한다. 없으면 이전 버전의 평문 값을 사용하고,
@@ -35,6 +37,13 @@ class TokenDataStore(private val context: Context) {
     suspend fun hasUnreadableToken(): Boolean {
         val encrypted = context.dataStore.data.first()[ENCRYPTED_TOKEN_KEY] ?: return false
         return TokenCipher.decrypt(encrypted) == null
+    }
+
+    // 백그라운드 저장소 자동 갱신. 기본값은 꺼짐 (주기적 API 호출을 사용자가 직접 켜도록 함)
+    val backgroundSyncEnabled: Flow<Boolean> = context.dataStore.data.map { it[BACKGROUND_SYNC_KEY] ?: false }
+
+    suspend fun setBackgroundSyncEnabled(enabled: Boolean) {
+        context.dataStore.edit { it[BACKGROUND_SYNC_KEY] = enabled }
     }
 
     // 테마 모드 (SYSTEM / LIGHT / DARK). 미설정 시 null → SYSTEM으로 해석
