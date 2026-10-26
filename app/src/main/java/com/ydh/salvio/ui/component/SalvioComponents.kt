@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -88,14 +86,15 @@ fun SalvioCard(
 
 /** 카드 내부 섹션 헤더: 작은 아이콘 + 제목 + 선택적 우측 액션. */
 @Composable
-fun SectionHeader(
-    title: String,
-    icon: ImageVector? = null,
-    action: Pair<String, () -> Unit>? = null
-) {
+fun SectionHeader(title: String, icon: ImageVector? = null, action: Pair<String, () -> Unit>? = null) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         if (icon != null) {
-            Icon(icon, contentDescription = null, tint = SalvioTheme.colors.textSecondary, modifier = Modifier.size(15.dp))
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = SalvioTheme.colors.textSecondary,
+                modifier = Modifier.size(15.dp)
+            )
             Spacer(modifier = Modifier.width(Spacing.sm))
         }
         Text(
@@ -114,11 +113,7 @@ fun SectionHeader(
 
 /** 상태 배지(pill). 상태색을 옅은 배경 + 텍스트로 표현. */
 @Composable
-fun StatusBadge(
-    label: String,
-    color: Color,
-    icon: ImageVector? = null
-) {
+fun StatusBadge(label: String, color: Color, icon: ImageVector? = null) {
     Surface(
         shape = Radius.chip,
         color = color.copy(alpha = 0.14f)
@@ -146,11 +141,7 @@ fun LoadingState(modifier: Modifier = Modifier) {
 
 /** 에러 상태: 아이콘 + 메시지 + 재시도. */
 @Composable
-fun ErrorState(
-    message: String,
-    onRetry: () -> Unit,
-    modifier: Modifier = Modifier
-) {
+fun ErrorState(message: String, onRetry: () -> Unit, modifier: Modifier = Modifier) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -170,22 +161,27 @@ fun ErrorState(
 
 /** 빈 상태: 아이콘 + 안내 문구. */
 @Composable
-fun EmptyState(
-    message: String,
-    icon: ImageVector,
-    modifier: Modifier = Modifier,
-    hint: String? = null
-) {
+fun EmptyState(message: String, icon: ImageVector, modifier: Modifier = Modifier, hint: String? = null) {
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(Spacing.sm),
             modifier = Modifier.padding(horizontal = Spacing.xl)
         ) {
-            Icon(icon, contentDescription = null, tint = SalvioTheme.colors.textSecondary, modifier = Modifier.size(44.dp))
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = SalvioTheme.colors.textSecondary,
+                modifier = Modifier.size(44.dp)
+            )
             Text(message, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium)
             hint?.let {
-                Text(it, color = SalvioTheme.colors.textSecondary, style = MaterialTheme.typography.bodySmall, textAlign = TextAlign.Center)
+                Text(
+                    it,
+                    color = SalvioTheme.colors.textSecondary,
+                    style = MaterialTheme.typography.bodySmall,
+                    textAlign = TextAlign.Center
+                )
             }
         }
     }

@@ -17,20 +17,20 @@ import androidx.compose.ui.graphics.Color
  */
 @Immutable
 data class SalvioColors(
-    val canvas: Color,        // 앱 배경
-    val canvasInset: Color,   // diff 등 더 깊은 면
-    val surface: Color,       // 카드 면
-    val surfaceHover: Color,  // 카드 hover/press
-    val border: Color,        // 구분선
-    val borderMuted: Color,   // 카드 기본 테두리(더 은은)
-    val text: Color,          // 기본 텍스트
+    val canvas: Color, // 앱 배경
+    val canvasInset: Color, // diff 등 더 깊은 면
+    val surface: Color, // 카드 면
+    val surfaceHover: Color, // 카드 hover/press
+    val border: Color, // 구분선
+    val borderMuted: Color, // 카드 기본 테두리(더 은은)
+    val text: Color, // 기본 텍스트
     val textSecondary: Color, // 보조 텍스트
-    val textTertiary: Color,  // 더 옅은 텍스트
-    val accent: Color,        // 링크/기본 액션
-    val success: Color,       // open/통과
-    val done: Color,          // merged
-    val attention: Color,     // 경고
-    val danger: Color,        // closed/실패
+    val textTertiary: Color, // 더 옅은 텍스트
+    val accent: Color, // 링크/기본 액션
+    val success: Color, // open/통과
+    val done: Color, // merged
+    val attention: Color, // 경고
+    val danger: Color, // closed/실패
     val isLight: Boolean
 )
 

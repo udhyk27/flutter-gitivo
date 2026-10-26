@@ -49,10 +49,7 @@ private fun materialSchemeFrom(c: SalvioColors) = if (c.isLight) {
 }
 
 @Composable
-fun SalvioTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    content: @Composable () -> Unit
-) {
+fun SalvioTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
     val colors = if (darkTheme) DarkColors else LightColors
     CompositionLocalProvider(LocalSalvioColors provides colors) {
         MaterialTheme(

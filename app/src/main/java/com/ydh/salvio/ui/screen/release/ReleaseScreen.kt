@@ -1,6 +1,5 @@
 package com.ydh.salvio.ui.screen.release
 
-import com.ydh.salvio.util.openInBrowser
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -13,13 +12,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.graphics.painter.ColorPainter
 import coil.compose.AsyncImage
 import com.ydh.salvio.data.model.GitHubRelease
 import com.ydh.salvio.ui.component.EmptyState
@@ -29,17 +28,13 @@ import com.ydh.salvio.ui.component.SalvioCard
 import com.ydh.salvio.ui.component.SalvioTopBar
 import com.ydh.salvio.ui.component.StatusBadge
 import com.ydh.salvio.ui.theme.*
-import com.ydh.salvio.viewmodel.DashboardViewModel
 import com.ydh.salvio.util.formatAbsolute
+import com.ydh.salvio.util.openInBrowser
+import com.ydh.salvio.viewmodel.DashboardViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ReleaseScreen(
-    owner: String,
-    repoName: String,
-    dashboardViewModel: DashboardViewModel,
-    onBack: () -> Unit
-) {
+fun ReleaseScreen(owner: String, repoName: String, dashboardViewModel: DashboardViewModel, onBack: () -> Unit) {
     val state by dashboardViewModel.releaseState.collectAsState()
     val context = LocalContext.current
 
@@ -66,7 +61,9 @@ fun ReleaseScreen(
         when {
             state.isLoading && state.releases.isEmpty() -> LoadingState(Modifier.padding(paddingValues))
             state.error != null && state.releases.isEmpty() ->
-                ErrorState(state.error ?: "릴리즈 목록을 불러오지 못했습니다.", { dashboardViewModel.loadReleases(owner, repoName, forceRefresh = true) }, Modifier.padding(paddingValues))
+                ErrorState(state.error ?: "릴리즈 목록을 불러오지 못했습니다.", {
+                    dashboardViewModel.loadReleases(owner, repoName, forceRefresh = true)
+                }, Modifier.padding(paddingValues))
             else -> PullToRefreshBox(
                 isRefreshing = state.isLoading,
                 onRefresh = { dashboardViewModel.loadReleases(owner, repoName, forceRefresh = true) },
@@ -118,7 +115,12 @@ private fun ReleaseCard(release: GitHubRelease, onClick: () -> Unit) {
                 )
                 if (release.prerelease) StatusBadge(label = "Pre-release", color = SalvioTheme.colors.attention)
                 if (release.draft) StatusBadge(label = "Draft", color = SalvioTheme.colors.textSecondary)
-                Icon(Icons.Default.OpenInNew, contentDescription = null, tint = SalvioTheme.colors.textSecondary, modifier = Modifier.size(14.dp))
+                Icon(
+                    Icons.Default.OpenInNew,
+                    contentDescription = null,
+                    tint = SalvioTheme.colors.textSecondary,
+                    modifier = Modifier.size(14.dp)
+                )
             }
 
             release.name?.takeIf { it.isNotBlank() && it != release.tagName }?.let { name ->
@@ -175,7 +177,12 @@ private fun ReleaseCard(release: GitHubRelease, onClick: () -> Unit) {
                     horizontalArrangement = Arrangement.spacedBy(Spacing.md),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.Inventory2, contentDescription = null, tint = SalvioTheme.colors.textSecondary, modifier = Modifier.size(14.dp))
+                    Icon(
+                        Icons.Default.Inventory2,
+                        contentDescription = null,
+                        tint = SalvioTheme.colors.textSecondary,
+                        modifier = Modifier.size(14.dp)
+                    )
                     Text(
                         text = "${release.assets.size}개 에셋",
                         fontSize = 12.sp,
@@ -183,7 +190,12 @@ private fun ReleaseCard(release: GitHubRelease, onClick: () -> Unit) {
                     )
                     val totalDownloads = release.assets.sumOf { it.downloadCount }
                     if (totalDownloads > 0) {
-                        Icon(Icons.Default.Download, contentDescription = null, tint = SalvioTheme.colors.textSecondary, modifier = Modifier.size(14.dp))
+                        Icon(
+                            Icons.Default.Download,
+                            contentDescription = null,
+                            tint = SalvioTheme.colors.textSecondary,
+                            modifier = Modifier.size(14.dp)
+                        )
                         Text(
                             text = "${formatCount(totalDownloads)} 다운로드",
                             fontSize = 12.sp,
@@ -196,8 +208,6 @@ private fun ReleaseCard(release: GitHubRelease, onClick: () -> Unit) {
     }
 }
 
-private fun formatReleaseDate(dateStr: String): String =
-    formatAbsolute(dateStr, "yyyy. MM. dd")
+private fun formatReleaseDate(dateStr: String): String = formatAbsolute(dateStr, "yyyy. MM. dd")
 
-private fun formatCount(count: Int): String =
-    if (count >= 1000) "${count / 1000}k" else count.toString()
+private fun formatCount(count: Int): String = if (count >= 1000) "${count / 1000}k" else count.toString()

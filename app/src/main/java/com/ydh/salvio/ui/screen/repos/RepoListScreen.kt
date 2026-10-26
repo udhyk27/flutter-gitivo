@@ -23,14 +23,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.graphics.painter.ColorPainter
 import coil.compose.AsyncImage
-import kotlinx.coroutines.launch
 import com.ydh.salvio.data.model.GitHubRepo
 import com.ydh.salvio.ui.component.EmptyState
 import com.ydh.salvio.ui.component.ErrorState
@@ -43,6 +42,7 @@ import com.ydh.salvio.viewmodel.AuthViewModel
 import com.ydh.salvio.viewmodel.RepoListState
 import com.ydh.salvio.viewmodel.RepoViewModel
 import com.ydh.salvio.viewmodel.ThemeViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -153,7 +153,13 @@ fun RepoListScreen(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
                     placeholder = { Text("저장소 검색", color = SalvioTheme.colors.textSecondary) },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = "검색", tint = SalvioTheme.colors.textSecondary) },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Default.Search,
+                            contentDescription = "검색",
+                            tint = SalvioTheme.colors.textSecondary
+                        )
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = Spacing.sm),
@@ -166,7 +172,11 @@ fun RepoListScreen(
                     trailingIcon = {
                         if (searchQuery.isNotBlank()) {
                             IconButton(onClick = { searchQuery = "" }) {
-                                Icon(Icons.Default.Clear, contentDescription = "검색어 삭제", tint = SalvioTheme.colors.textSecondary)
+                                Icon(
+                                    Icons.Default.Clear,
+                                    contentDescription = "검색어 삭제",
+                                    tint = SalvioTheme.colors.textSecondary
+                                )
                             }
                         }
                     }
@@ -175,13 +185,16 @@ fun RepoListScreen(
 
             when (val state = repoState) {
                 is RepoListState.Loading -> LoadingState()
-                is RepoListState.Error -> ErrorState(state.message, onRetry = { repoViewModel.loadRepos(forceRefresh = true) })
+                is RepoListState.Error -> ErrorState(
+                    state.message,
+                    onRetry = { repoViewModel.loadRepos(forceRefresh = true) }
+                )
                 is RepoListState.Success -> {
                     val allRepos = state.repos
                     val filtered = allRepos.filter {
                         val matchQuery = searchQuery.isBlank() ||
-                                it.name.contains(searchQuery, ignoreCase = true) ||
-                                it.description?.contains(searchQuery, ignoreCase = true) == true
+                            it.name.contains(searchQuery, ignoreCase = true) ||
+                            it.description?.contains(searchQuery, ignoreCase = true) == true
                         val matchFav = !showFavoritesOnly || favorites.contains(it.fullName)
                         matchQuery && matchFav
                     }
@@ -203,14 +216,14 @@ fun RepoListScreen(
                             if (sorted.isEmpty()) {
                                 item(key = "empty") {
                                     EmptyState(
-                                    "저장소가 없습니다.",
-                                    Icons.Default.FolderOff,
-                                    hint = if (searchQuery.isNotBlank() || showFavoritesOnly) {
-                                        "검색어나 즐겨찾기 필터를 바꿔 보세요."
-                                    } else {
-                                        "토큰에 repo, read:user 권한이 있는지 확인하세요."
-                                    }
-                                )
+                                        "저장소가 없습니다.",
+                                        Icons.Default.FolderOff,
+                                        hint = if (searchQuery.isNotBlank() || showFavoritesOnly) {
+                                            "검색어나 즐겨찾기 필터를 바꿔 보세요."
+                                        } else {
+                                            "토큰에 repo, read:user 권한이 있는지 확인하세요."
+                                        }
+                                    )
                                 }
                             } else {
                                 if (favRepos.isNotEmpty() && !showFavoritesOnly) {
@@ -233,7 +246,9 @@ fun RepoListScreen(
                                                 repoViewModel.toggleWatch(repo.fullName)
                                             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                                                 pendingWatchRepoName = repo.fullName
-                                                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                                notificationPermissionLauncher.launch(
+                                                    Manifest.permission.POST_NOTIFICATIONS
+                                                )
                                             } else {
                                                 repoViewModel.toggleWatch(repo.fullName)
                                             }
@@ -281,9 +296,19 @@ private fun SettingsDialog(
                     color = SalvioTheme.colors.textSecondary,
                     modifier = Modifier.padding(bottom = Spacing.xs)
                 )
-                ThemeOptionRow("시스템 설정", Icons.Default.BrightnessAuto, themeMode == ThemeMode.SYSTEM) { onThemeModeChange(ThemeMode.SYSTEM) }
-                ThemeOptionRow("라이트", Icons.Default.LightMode, themeMode == ThemeMode.LIGHT) { onThemeModeChange(ThemeMode.LIGHT) }
-                ThemeOptionRow("다크", Icons.Default.DarkMode, themeMode == ThemeMode.DARK) { onThemeModeChange(ThemeMode.DARK) }
+                ThemeOptionRow("시스템 설정", Icons.Default.BrightnessAuto, themeMode == ThemeMode.SYSTEM) {
+                    onThemeModeChange(ThemeMode.SYSTEM)
+                }
+                ThemeOptionRow(
+                    "라이트",
+                    Icons.Default.LightMode,
+                    themeMode == ThemeMode.LIGHT
+                ) { onThemeModeChange(ThemeMode.LIGHT) }
+                ThemeOptionRow(
+                    "다크",
+                    Icons.Default.DarkMode,
+                    themeMode == ThemeMode.DARK
+                ) { onThemeModeChange(ThemeMode.DARK) }
 
                 Spacer(modifier = Modifier.height(Spacing.sm))
                 Text(
@@ -297,7 +322,11 @@ private fun SettingsDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("백그라운드 자동 갱신", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
+                        Text(
+                            "백그라운드 자동 갱신",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
                         Text(
                             "15분마다 저장소 목록을 갱신합니다. API 사용량이 늘어납니다.",
                             style = MaterialTheme.typography.bodySmall,
@@ -320,7 +349,12 @@ private fun SettingsDialog(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(Spacing.md)
                 ) {
-                    Icon(Icons.Default.Logout, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                    Icon(
+                        Icons.Default.Logout,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(18.dp)
+                    )
                     Text("로그아웃", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.titleSmall)
                 }
             }
@@ -376,7 +410,12 @@ fun RepoCard(
         Column(modifier = Modifier.padding(Spacing.card)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (repo.private) {
-                    Icon(Icons.Default.Lock, contentDescription = null, tint = SalvioTheme.colors.textSecondary, modifier = Modifier.size(13.dp))
+                    Icon(
+                        Icons.Default.Lock,
+                        contentDescription = null,
+                        tint = SalvioTheme.colors.textSecondary,
+                        modifier = Modifier.size(13.dp)
+                    )
                     Spacer(modifier = Modifier.width(Spacing.xs))
                 }
                 Text(
@@ -421,7 +460,10 @@ fun RepoCard(
 
             Spacer(modifier = Modifier.height(Spacing.md))
 
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.lg), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(Spacing.lg),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 repo.language?.let { lang ->
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(modifier = Modifier.size(9.dp).clip(CircleShape).background(languageColor(lang)))

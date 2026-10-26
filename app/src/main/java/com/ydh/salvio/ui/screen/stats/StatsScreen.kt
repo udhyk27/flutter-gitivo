@@ -3,7 +3,6 @@ package com.ydh.salvio.ui.screen.stats
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import com.ydh.salvio.data.model.CommitWeekActivity
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -13,11 +12,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.graphics.painter.ColorPainter
 import coil.compose.AsyncImage
+import com.ydh.salvio.data.model.CommitWeekActivity
 import com.ydh.salvio.data.model.ContributorWeeklyStats
 import com.ydh.salvio.data.model.GitHubContributor
 import com.ydh.salvio.data.model.TrafficClones
@@ -33,12 +33,7 @@ import com.ydh.salvio.viewmodel.DashboardViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StatsScreen(
-    owner: String,
-    repoName: String,
-    dashboardViewModel: DashboardViewModel,
-    onBack: () -> Unit
-) {
+fun StatsScreen(owner: String, repoName: String, dashboardViewModel: DashboardViewModel, onBack: () -> Unit) {
     val state by dashboardViewModel.statsState.collectAsState()
 
     LaunchedEffect(owner, repoName) {
@@ -64,7 +59,9 @@ fun StatsScreen(
         when {
             state.isLoading && state.contributors.isEmpty() -> LoadingState(Modifier.padding(paddingValues))
             state.error != null && state.contributors.isEmpty() ->
-                ErrorState(state.error ?: "통계를 불러오지 못했습니다.", { dashboardViewModel.loadStats(owner, repoName, forceRefresh = true) }, Modifier.padding(paddingValues))
+                ErrorState(state.error ?: "통계를 불러오지 못했습니다.", {
+                    dashboardViewModel.loadStats(owner, repoName, forceRefresh = true)
+                }, Modifier.padding(paddingValues))
             else -> {
                 PullToRefreshBox(
                     isRefreshing = state.isLoading,
@@ -172,9 +169,18 @@ private fun TrafficDeniedCard() {
             horizontalArrangement = Arrangement.spacedBy(Spacing.md),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Default.Lock, contentDescription = null, tint = SalvioTheme.colors.textSecondary, modifier = Modifier.size(18.dp))
+            Icon(
+                Icons.Default.Lock,
+                contentDescription = null,
+                tint = SalvioTheme.colors.textSecondary,
+                modifier = Modifier.size(18.dp)
+            )
             Column {
-                Text("트래픽 통계 없음", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface)
+                Text(
+                    "트래픽 통계 없음",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
                 Text("저장소 push 권한이 있어야 조회할 수 있습니다.", fontSize = 12.sp, color = SalvioTheme.colors.textSecondary)
             }
         }
@@ -196,12 +202,25 @@ private fun TrafficStatItem(
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Column(modifier = Modifier.padding(Spacing.md)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                Icon(icon, contentDescription = null, tint = SalvioTheme.colors.textSecondary, modifier = Modifier.size(14.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
+            ) {
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    tint = SalvioTheme.colors.textSecondary,
+                    modifier = Modifier.size(14.dp)
+                )
                 Text(text = label, fontSize = 12.sp, color = SalvioTheme.colors.textSecondary)
             }
             Spacer(modifier = Modifier.height(Spacing.sm))
-            Text(text = "$total", fontSize = 24.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+            Text(
+                text = "$total",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
             Text(text = "순방문자 $uniques", fontSize = 11.sp, color = SalvioTheme.colors.textSecondary)
         }
     }
@@ -231,7 +250,11 @@ private fun ContributorRankingCard(
                         weeklyStats = statsMap[contributor.login]
                     )
                     if (index < top.size - 1) {
-                        HorizontalDivider(color = SalvioTheme.colors.borderMuted, thickness = 0.5.dp, modifier = Modifier.padding(vertical = Spacing.xs))
+                        HorizontalDivider(
+                            color = SalvioTheme.colors.borderMuted,
+                            thickness = 0.5.dp,
+                            modifier = Modifier.padding(vertical = Spacing.xs)
+                        )
                     }
                 }
             }
@@ -326,7 +349,13 @@ private fun RecentCommitAuthorsCard(commits: List<Pair<String, Int>>) {
                         horizontalArrangement = Arrangement.spacedBy(Spacing.md),
                         modifier = Modifier.padding(vertical = Spacing.xs)
                     ) {
-                        Text(text = name, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.width(100.dp), maxLines = 1)
+                        Text(
+                            text = name,
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.width(100.dp),
+                            maxLines = 1
+                        )
                         val ratio = count.toFloat() / maxCount.toFloat()
                         LinearProgressIndicator(
                             progress = { ratio },
@@ -334,7 +363,12 @@ private fun RecentCommitAuthorsCard(commits: List<Pair<String, Int>>) {
                             color = MaterialTheme.colorScheme.primary,
                             trackColor = MaterialTheme.colorScheme.outlineVariant
                         )
-                        Text(text = "$count", fontSize = 12.sp, color = SalvioTheme.colors.textSecondary, modifier = Modifier.width(30.dp))
+                        Text(
+                            text = "$count",
+                            fontSize = 12.sp,
+                            color = SalvioTheme.colors.textSecondary,
+                            modifier = Modifier.width(30.dp)
+                        )
                     }
                 }
             }

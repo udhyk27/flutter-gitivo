@@ -14,6 +14,7 @@ object Spacing {
 
     /** 화면 좌우 기본 여백 */
     val screen = 16.dp
+
     /** 카드 내부 여백 */
     val card = 16.dp
 }

@@ -1,6 +1,5 @@
 package com.ydh.salvio.ui.screen.commit
 
-import com.ydh.salvio.util.openInBrowser
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -15,14 +14,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.ColorPainter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.graphics.painter.ColorPainter
 import coil.compose.AsyncImage
 import com.ydh.salvio.data.model.CommitFile
 import com.ydh.salvio.data.model.GitHubCommitDetail
@@ -32,6 +31,7 @@ import com.ydh.salvio.ui.component.SalvioCard
 import com.ydh.salvio.ui.component.SalvioTopBar
 import com.ydh.salvio.ui.theme.*
 import com.ydh.salvio.util.formatAbsolute
+import com.ydh.salvio.util.openInBrowser
 import com.ydh.salvio.viewmodel.DashboardViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -81,7 +81,9 @@ fun CommitDetailScreen(
         when {
             state.isLoading -> LoadingState(Modifier.padding(paddingValues))
             state.error != null ->
-                ErrorState(state.error!!, { dashboardViewModel.loadCommitDetail(owner, repoName, sha) }, Modifier.padding(paddingValues))
+                ErrorState(state.error!!, {
+                    dashboardViewModel.loadCommitDetail(owner, repoName, sha)
+                }, Modifier.padding(paddingValues))
             state.detail != null -> CommitDetailContent(
                 detail = state.detail!!,
                 modifier = Modifier.padding(paddingValues)
@@ -101,7 +103,10 @@ private fun CommitDetailContent(detail: GitHubCommitDetail, modifier: Modifier =
     ) {
         item {
             SalvioCard(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(Spacing.card), verticalArrangement = Arrangement.spacedBy(Spacing.md)) {
+                Column(
+                    modifier = Modifier.padding(Spacing.card),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.md)
+                ) {
                     Text(
                         text = detail.commit.message,
                         fontWeight = FontWeight.SemiBold,
@@ -164,8 +169,11 @@ private fun CommitDetailContent(detail: GitHubCommitDetail, modifier: Modifier =
                 file = file,
                 isExpanded = isExpanded,
                 onToggle = {
-                    expandedFiles = if (isExpanded) expandedFiles - file.filename
-                    else expandedFiles + file.filename
+                    expandedFiles = if (isExpanded) {
+                        expandedFiles - file.filename
+                    } else {
+                        expandedFiles + file.filename
+                    }
                 }
             )
         }
@@ -291,5 +299,4 @@ private fun StatChip(label: String, color: Color) {
     }
 }
 
-private fun formatDate(dateStr: String): String =
-    formatAbsolute(dateStr, "yyyy년 MM월 dd일 HH:mm")
+private fun formatDate(dateStr: String): String = formatAbsolute(dateStr, "yyyy년 MM월 dd일 HH:mm")

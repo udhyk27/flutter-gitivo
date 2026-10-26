@@ -2,17 +2,15 @@ package com.ydh.salvio.ui.component
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ydh.salvio.data.model.CommitWeekActivity
@@ -22,10 +20,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 @Composable
-fun CommitActivityChart(
-    activity: List<CommitWeekActivity>,
-    modifier: Modifier = Modifier
-) {
+fun CommitActivityChart(activity: List<CommitWeekActivity>, modifier: Modifier = Modifier) {
     if (activity.isEmpty()) {
         Text("커밋 활동 데이터 없음", color = SalvioTheme.colors.textSecondary, fontSize = 13.sp)
         return
@@ -80,7 +75,9 @@ fun CommitActivityChart(
                 val labelText = try {
                     val instant = Instant.ofEpochSecond(week.week)
                     DateTimeFormatter.ofPattern("M/d").withZone(ZoneId.systemDefault()).format(instant)
-                } catch (e: Exception) { "" }
+                } catch (e: Exception) {
+                    ""
+                }
 
                 val measured = textMeasurer.measure(
                     labelText,

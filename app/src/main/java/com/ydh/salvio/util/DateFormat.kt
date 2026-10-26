@@ -13,8 +13,11 @@ import java.time.temporal.ChronoUnit
  * 상대 시간 로직을 결정적으로 단위 테스트할 수 있다. (화면 호출부는 인자 생략)
  */
 
-private fun String.toInstantOrNull(): Instant? =
-    try { Instant.parse(this) } catch (e: Exception) { null }
+private fun String.toInstantOrNull(): Instant? = try {
+    Instant.parse(this)
+} catch (e: Exception) {
+    null
+}
 
 /** 절대 시각을 지정 패턴으로 포맷. */
 fun formatAbsolute(dateStr: String, pattern: String, zone: ZoneId = ZoneId.systemDefault()): String {
@@ -23,11 +26,7 @@ fun formatAbsolute(dateStr: String, pattern: String, zone: ZoneId = ZoneId.syste
 }
 
 /** 분/시간 단위 상대 시간, 하루 이상은 MM/dd. (알림 등 최근 이벤트용) */
-fun relativeTime(
-    dateStr: String,
-    now: Instant = Instant.now(),
-    zone: ZoneId = ZoneId.systemDefault()
-): String {
+fun relativeTime(dateStr: String, now: Instant = Instant.now(), zone: ZoneId = ZoneId.systemDefault()): String {
     val instant = dateStr.toInstantOrNull() ?: return dateStr.take(10)
     val hours = ChronoUnit.HOURS.between(instant, now)
     return when {

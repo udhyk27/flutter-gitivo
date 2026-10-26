@@ -29,10 +29,7 @@ import com.ydh.salvio.viewmodel.NotificationViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NotificationScreen(
-    notificationViewModel: NotificationViewModel,
-    onBack: () -> Unit
-) {
+fun NotificationScreen(notificationViewModel: NotificationViewModel, onBack: () -> Unit) {
     val state by notificationViewModel.state.collectAsState()
     val unreadCount = state.notifications.count { it.unread }
     var showMarkAllDialog by remember { mutableStateOf(false) }
@@ -68,7 +65,10 @@ fun NotificationScreen(
         topBar = {
             SalvioTopBar(
                 title = {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.sm)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
+                    ) {
                         Text("알림", style = MaterialTheme.typography.titleLarge)
                         if (unreadCount > 0) {
                             Badge(containerColor = SalvioTheme.colors.accent) { Text("$unreadCount") }
@@ -97,7 +97,11 @@ fun NotificationScreen(
             state.isLoading && state.notifications.isEmpty() -> LoadingState(Modifier.padding(paddingValues))
             state.error != null && state.notifications.isEmpty() ->
                 ErrorState(state.error!!, { notificationViewModel.load() }, Modifier.padding(paddingValues))
-            state.notifications.isEmpty() -> EmptyState("읽지 않은 알림이 없습니다.", Icons.Default.NotificationsNone, Modifier.padding(paddingValues))
+            state.notifications.isEmpty() -> EmptyState(
+                "읽지 않은 알림이 없습니다.",
+                Icons.Default.NotificationsNone,
+                Modifier.padding(paddingValues)
+            )
             else -> PullToRefreshBox(
                 isRefreshing = state.isLoading,
                 onRefresh = { notificationViewModel.load() },
@@ -142,7 +146,13 @@ private fun NotificationCard(notification: GitHubNotification, onMarkRead: () ->
 
     SalvioCard(
         modifier = Modifier.fillMaxWidth(),
-        border = if (notification.unread) SalvioTheme.colors.accent.copy(alpha = 0.4f) else SalvioTheme.colors.borderMuted
+        border = if (notification.unread) {
+            SalvioTheme.colors.accent.copy(
+                alpha = 0.4f
+            )
+        } else {
+            SalvioTheme.colors.borderMuted
+        }
     ) {
         Row(
             modifier = Modifier.padding(Spacing.md),
@@ -151,13 +161,20 @@ private fun NotificationCard(notification: GitHubNotification, onMarkRead: () ->
         ) {
             if (notification.unread) {
                 Box(
-                    modifier = Modifier.padding(top = 5.dp).size(8.dp).clip(CircleShape).background(SalvioTheme.colors.accent)
+                    modifier = Modifier.padding(
+                        top = 5.dp
+                    ).size(8.dp).clip(CircleShape).background(SalvioTheme.colors.accent)
                 )
             } else {
                 Spacer(modifier = Modifier.size(8.dp))
             }
 
-            Icon(typeIcon, contentDescription = null, tint = typeColor, modifier = Modifier.size(18.dp).padding(top = 2.dp))
+            Icon(
+                typeIcon,
+                contentDescription = null,
+                tint = typeColor,
+                modifier = Modifier.size(18.dp).padding(top = 2.dp)
+            )
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -177,7 +194,10 @@ private fun NotificationCard(notification: GitHubNotification, onMarkRead: () ->
                     overflow = TextOverflow.Ellipsis
                 )
                 Spacer(modifier = Modifier.height(Spacing.xs))
-                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.sm), verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     ReasonBadge(label = reasonLabel)
                     Text(
                         text = relativeTime(notification.updatedAt),
@@ -189,7 +209,12 @@ private fun NotificationCard(notification: GitHubNotification, onMarkRead: () ->
 
             if (notification.unread) {
                 IconButton(onClick = onMarkRead, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Default.Check, contentDescription = "읽음 처리", tint = SalvioTheme.colors.textSecondary, modifier = Modifier.size(16.dp))
+                    Icon(
+                        Icons.Default.Check,
+                        contentDescription = "읽음 처리",
+                        tint = SalvioTheme.colors.textSecondary,
+                        modifier = Modifier.size(16.dp)
+                    )
                 }
             }
         }
@@ -210,4 +235,3 @@ private fun ReasonBadge(label: String) {
         )
     }
 }
-

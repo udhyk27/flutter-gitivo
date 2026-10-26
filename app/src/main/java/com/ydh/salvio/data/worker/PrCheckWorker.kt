@@ -10,8 +10,8 @@ import com.ydh.salvio.data.local.TokenDataStore
 import com.ydh.salvio.util.Logger
 import com.ydh.salvio.util.httpCode
 import com.ydh.salvio.util.isAuthExpired
-import kotlinx.coroutines.flow.first
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.flow.first
 
 class PrCheckWorker(
     private val context: Context,

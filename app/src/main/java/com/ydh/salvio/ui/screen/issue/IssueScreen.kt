@@ -1,8 +1,6 @@
 package com.ydh.salvio.ui.screen.issue
 
-import com.ydh.salvio.util.openInBrowser
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -16,12 +14,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.graphics.painter.ColorPainter
 import coil.compose.AsyncImage
 import com.ydh.salvio.data.model.GitHubIssue
 import com.ydh.salvio.data.model.GitHubLabel
@@ -31,17 +29,13 @@ import com.ydh.salvio.ui.component.LoadingState
 import com.ydh.salvio.ui.component.SalvioCard
 import com.ydh.salvio.ui.component.SalvioTopBar
 import com.ydh.salvio.ui.theme.*
-import com.ydh.salvio.viewmodel.DashboardViewModel
 import com.ydh.salvio.util.formatAbsolute
+import com.ydh.salvio.util.openInBrowser
+import com.ydh.salvio.viewmodel.DashboardViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun IssueScreen(
-    owner: String,
-    repoName: String,
-    dashboardViewModel: DashboardViewModel,
-    onBack: () -> Unit
-) {
+fun IssueScreen(owner: String, repoName: String, dashboardViewModel: DashboardViewModel, onBack: () -> Unit) {
     val state by dashboardViewModel.issueState.collectAsState()
     var selectedTab by remember { mutableIntStateOf(0) }
     val context = LocalContext.current
@@ -91,7 +85,9 @@ fun IssueScreen(
             when {
                 state.isLoading && state.openIssues.isEmpty() && state.closedIssues.isEmpty() -> LoadingState()
                 state.error != null && state.openIssues.isEmpty() && state.closedIssues.isEmpty() ->
-                    ErrorState(state.error ?: "이슈 목록을 불러오지 못했습니다.", onRetry = { dashboardViewModel.loadIssues(owner, repoName, forceRefresh = true) })
+                    ErrorState(state.error ?: "이슈 목록을 불러오지 못했습니다.", onRetry = {
+                        dashboardViewModel.loadIssues(owner, repoName, forceRefresh = true)
+                    })
                 else -> {
                     val issues = if (selectedTab == 0) state.openIssues else state.closedIssues
 
@@ -166,7 +162,12 @@ private fun IssueCard(issue: GitHubIssue, onClick: () -> Unit) {
                         Text(text = formatIssueDate(issue), fontSize = 12.sp, color = SalvioTheme.colors.textSecondary)
                     }
                 }
-                Icon(Icons.Default.OpenInNew, contentDescription = null, tint = SalvioTheme.colors.textSecondary, modifier = Modifier.size(14.dp))
+                Icon(
+                    Icons.Default.OpenInNew,
+                    contentDescription = null,
+                    tint = SalvioTheme.colors.textSecondary,
+                    modifier = Modifier.size(14.dp)
+                )
             }
 
             if (issue.labels.isNotEmpty()) {
@@ -193,8 +194,19 @@ private fun IssueCard(issue: GitHubIssue, onClick: () -> Unit) {
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
                         ) {
-                            Icon(Icons.Default.Flag, contentDescription = null, tint = SalvioTheme.colors.textSecondary, modifier = Modifier.size(12.dp))
-                            Text(text = it.title, fontSize = 11.sp, color = SalvioTheme.colors.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Icon(
+                                Icons.Default.Flag,
+                                contentDescription = null,
+                                tint = SalvioTheme.colors.textSecondary,
+                                modifier = Modifier.size(12.dp)
+                            )
+                            Text(
+                                text = it.title,
+                                fontSize = 11.sp,
+                                color = SalvioTheme.colors.textSecondary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
                         }
                     }
                     if (issue.comments > 0) {
@@ -202,7 +214,12 @@ private fun IssueCard(issue: GitHubIssue, onClick: () -> Unit) {
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
                         ) {
-                            Icon(Icons.Default.Comment, contentDescription = null, tint = SalvioTheme.colors.textSecondary, modifier = Modifier.size(12.dp))
+                            Icon(
+                                Icons.Default.Comment,
+                                contentDescription = null,
+                                tint = SalvioTheme.colors.textSecondary,
+                                modifier = Modifier.size(12.dp)
+                            )
                             Text(text = "${issue.comments}", fontSize = 11.sp, color = SalvioTheme.colors.textSecondary)
                         }
                     }

@@ -31,13 +31,12 @@ abstract class AppDatabase : RoomDatabase() {
     companion object {
         @Volatile private var INSTANCE: AppDatabase? = null
 
-        fun getInstance(context: Context): AppDatabase =
-            INSTANCE ?: synchronized(this) {
-                INSTANCE ?: Room.databaseBuilder(
-                    context.applicationContext,
-                    AppDatabase::class.java,
-                    "salvio_cache.db"
-                ).fallbackToDestructiveMigration().build().also { INSTANCE = it }
-            }
+        fun getInstance(context: Context): AppDatabase = INSTANCE ?: synchronized(this) {
+            INSTANCE ?: Room.databaseBuilder(
+                context.applicationContext,
+                AppDatabase::class.java,
+                "salvio_cache.db"
+            ).fallbackToDestructiveMigration().build().also { INSTANCE = it }
+        }
     }
 }

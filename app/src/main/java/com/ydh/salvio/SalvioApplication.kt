@@ -10,12 +10,12 @@ import com.ydh.salvio.data.local.TokenDataStore
 import com.ydh.salvio.data.repository.GitHubRepository
 import com.ydh.salvio.data.worker.PrCheckWorker
 import com.ydh.salvio.data.worker.RepoSyncWorker
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import java.util.concurrent.TimeUnit
 
 class SalvioApplication : Application() {
     lateinit var tokenDataStore: TokenDataStore

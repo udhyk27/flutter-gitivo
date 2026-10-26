@@ -1,6 +1,5 @@
 package com.ydh.salvio.ui.screen.branch
 
-import com.ydh.salvio.util.openInBrowser
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -26,17 +25,13 @@ import com.ydh.salvio.ui.component.SalvioTopBar
 import com.ydh.salvio.ui.component.StatusBadge
 import com.ydh.salvio.ui.theme.*
 import com.ydh.salvio.util.isOlderThanDays
+import com.ydh.salvio.util.openInBrowser
 import com.ydh.salvio.util.relativeDays
 import com.ydh.salvio.viewmodel.DashboardViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BranchScreen(
-    owner: String,
-    repoName: String,
-    dashboardViewModel: DashboardViewModel,
-    onBack: () -> Unit
-) {
+fun BranchScreen(owner: String, repoName: String, dashboardViewModel: DashboardViewModel, onBack: () -> Unit) {
     val state by dashboardViewModel.branchState.collectAsState()
     val context = LocalContext.current
 
@@ -63,7 +58,9 @@ fun BranchScreen(
         when {
             state.isLoading && state.branches.isEmpty() -> LoadingState(Modifier.padding(paddingValues))
             state.error != null && state.branches.isEmpty() ->
-                ErrorState(state.error ?: "브랜치 목록을 불러오지 못했습니다.", { dashboardViewModel.loadBranches(owner, repoName, forceRefresh = true) }, Modifier.padding(paddingValues))
+                ErrorState(state.error ?: "브랜치 목록을 불러오지 못했습니다.", {
+                    dashboardViewModel.loadBranches(owner, repoName, forceRefresh = true)
+                }, Modifier.padding(paddingValues))
             else -> {
                 PullToRefreshBox(
                     isRefreshing = state.isLoading,

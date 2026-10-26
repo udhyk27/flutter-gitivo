@@ -48,10 +48,7 @@ interface GitHubApi {
     ): List<GitHubContributor>
 
     @GET("repos/{owner}/{repo}")
-    suspend fun getRepo(
-        @Path("owner") owner: String,
-        @Path("repo") repo: String
-    ): GitHubRepo
+    suspend fun getRepo(@Path("owner") owner: String, @Path("repo") repo: String): GitHubRepo
 
     @GET("repos/{owner}/{repo}/commits/{ref}")
     suspend fun getBranchLatestCommit(
@@ -75,10 +72,7 @@ interface GitHubApi {
     ): List<GitHubPrReview>
 
     @GET("repos/{owner}/{repo}/stats/commit_activity")
-    suspend fun getCommitActivity(
-        @Path("owner") owner: String,
-        @Path("repo") repo: String
-    ): List<CommitWeekActivity>
+    suspend fun getCommitActivity(@Path("owner") owner: String, @Path("repo") repo: String): List<CommitWeekActivity>
 
     @GET("repos/{owner}/{repo}/issues")
     suspend fun getIssues(
@@ -112,16 +106,10 @@ interface GitHubApi {
     ): List<PullRequestFile>
 
     @GET("repos/{owner}/{repo}/traffic/views")
-    suspend fun getTrafficViews(
-        @Path("owner") owner: String,
-        @Path("repo") repo: String
-    ): TrafficViews
+    suspend fun getTrafficViews(@Path("owner") owner: String, @Path("repo") repo: String): TrafficViews
 
     @GET("repos/{owner}/{repo}/traffic/clones")
-    suspend fun getTrafficClones(
-        @Path("owner") owner: String,
-        @Path("repo") repo: String
-    ): TrafficClones
+    suspend fun getTrafficClones(@Path("owner") owner: String, @Path("repo") repo: String): TrafficClones
 
     @GET("repos/{owner}/{repo}/stats/contributors")
     suspend fun getContributorStats(
@@ -136,13 +124,8 @@ interface GitHubApi {
     ): List<GitHubNotification>
 
     @PATCH("notifications/threads/{thread_id}")
-    suspend fun markNotificationRead(
-        @Path("thread_id") threadId: String
-    ): retrofit2.Response<Unit>
+    suspend fun markNotificationRead(@Path("thread_id") threadId: String): retrofit2.Response<Unit>
 
     @GET("search/code")
-    suspend fun searchCode(
-        @Query("q") query: String,
-        @Query("per_page") perPage: Int = 100
-    ): CodeSearchResponse
+    suspend fun searchCode(@Query("q") query: String, @Query("per_page") perPage: Int = 100): CodeSearchResponse
 }

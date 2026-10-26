@@ -8,19 +8,18 @@ import com.ydh.salvio.SalvioApplication
 import com.ydh.salvio.data.api.RetrofitClient
 import com.ydh.salvio.data.model.GitHubUser
 import com.ydh.salvio.data.worker.PrCheckWorker
-import com.ydh.salvio.util.httpCode
-import com.ydh.salvio.util.toUserMessage
-import com.ydh.salvio.util.isAuthExpired
 import com.ydh.salvio.util.Logger
+import com.ydh.salvio.util.isAuthExpired
+import com.ydh.salvio.util.toUserMessage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 sealed class AuthState {
     object Idle : AuthState()

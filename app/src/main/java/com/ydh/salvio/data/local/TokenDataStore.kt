@@ -7,10 +7,10 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.ydh.salvio.util.TokenCipher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import com.ydh.salvio.util.TokenCipher
 
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "salvio_prefs")
 
@@ -84,8 +84,11 @@ class TokenDataStore(private val context: Context) {
         context.dataStore.edit { prefs ->
             val current = prefs[FAVORITE_REPOS_KEY]
                 ?.split(",")?.filter { it.isNotBlank() }?.toMutableSet() ?: mutableSetOf()
-            if (current.contains(repoFullName)) current.remove(repoFullName)
-            else current.add(repoFullName)
+            if (current.contains(repoFullName)) {
+                current.remove(repoFullName)
+            } else {
+                current.add(repoFullName)
+            }
             prefs[FAVORITE_REPOS_KEY] = current.joinToString(",")
         }
     }

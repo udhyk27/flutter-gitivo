@@ -6,10 +6,10 @@ import androidx.lifecycle.viewModelScope
 import com.ydh.salvio.SalvioApplication
 import com.ydh.salvio.data.model.GitHubRepo
 import com.ydh.salvio.data.worker.PrCheckWorker
-import com.ydh.salvio.util.toUserMessage
+import com.ydh.salvio.util.Logger
 import com.ydh.salvio.util.NetworkState
 import com.ydh.salvio.util.isAuthExpired
-import com.ydh.salvio.util.Logger
+import com.ydh.salvio.util.toUserMessage
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 

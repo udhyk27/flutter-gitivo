@@ -1,6 +1,5 @@
 package com.ydh.salvio.ui.screen.pullrequest
 
-import com.ydh.salvio.util.openInBrowser
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -13,13 +12,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.graphics.painter.ColorPainter
 import coil.compose.AsyncImage
 import com.ydh.salvio.data.model.CheckRunsResponse
 import com.ydh.salvio.data.model.GitHubPrReview
@@ -32,17 +30,13 @@ import com.ydh.salvio.ui.component.SalvioCard
 import com.ydh.salvio.ui.component.SalvioTopBar
 import com.ydh.salvio.ui.component.StatusBadge
 import com.ydh.salvio.ui.theme.*
-import com.ydh.salvio.viewmodel.DashboardViewModel
 import com.ydh.salvio.util.formatAbsolute
+import com.ydh.salvio.util.openInBrowser
+import com.ydh.salvio.viewmodel.DashboardViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PullRequestScreen(
-    owner: String,
-    repoName: String,
-    dashboardViewModel: DashboardViewModel,
-    onBack: () -> Unit
-) {
+fun PullRequestScreen(owner: String, repoName: String, dashboardViewModel: DashboardViewModel, onBack: () -> Unit) {
     val state by dashboardViewModel.prState.collectAsState()
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Open", "Merged", "Closed")
@@ -60,7 +54,9 @@ fun PullRequestScreen(
                     IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = "뒤로") }
                 },
                 actions = {
-                    IconButton(onClick = { dashboardViewModel.loadPullRequests(owner, repoName, forceRefresh = true) }) {
+                    IconButton(
+                        onClick = { dashboardViewModel.loadPullRequests(owner, repoName, forceRefresh = true) }
+                    ) {
                         Icon(Icons.Default.Refresh, contentDescription = "새로고침")
                     }
                 }
@@ -101,7 +97,9 @@ fun PullRequestScreen(
             when {
                 state.isLoading && state.openPrs.isEmpty() -> LoadingState()
                 state.error != null && state.openPrs.isEmpty() && state.mergedPrs.isEmpty() && state.closedPrs.isEmpty() ->
-                    ErrorState(state.error ?: "PR 목록을 불러오지 못했습니다.", onRetry = { dashboardViewModel.loadPullRequests(owner, repoName, forceRefresh = true) })
+                    ErrorState(state.error ?: "PR 목록을 불러오지 못했습니다.", onRetry = {
+                        dashboardViewModel.loadPullRequests(owner, repoName, forceRefresh = true)
+                    })
                 else -> {
                     val prs = when (selectedTab) {
                         0 -> state.openPrs
@@ -120,7 +118,11 @@ fun PullRequestScreen(
                         onRefresh = { dashboardViewModel.loadPullRequests(owner, repoName, forceRefresh = true) }
                     ) {
                         if (prs.isEmpty()) {
-                            EmptyState("${tabs[selectedTab]} PR이 없습니다.", Icons.Default.MergeType, hint = "아래로 당기면 목록을 새로고침합니다.")
+                            EmptyState(
+                                "${tabs[selectedTab]} PR이 없습니다.",
+                                Icons.Default.MergeType,
+                                hint = "아래로 당기면 목록을 새로고침합니다."
+                            )
                         } else {
                             LazyColumn(
                                 contentPadding = PaddingValues(Spacing.screen),
@@ -254,9 +256,21 @@ private fun PullRequestCard(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.lg),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.xs)) {
-                    Icon(Icons.Default.Comment, contentDescription = null, tint = SalvioTheme.colors.textSecondary, modifier = Modifier.size(14.dp))
-                    Text(text = "${pr.comments + pr.reviewComments}", fontSize = 12.sp, color = SalvioTheme.colors.textSecondary)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.xs)
+                ) {
+                    Icon(
+                        Icons.Default.Comment,
+                        contentDescription = null,
+                        tint = SalvioTheme.colors.textSecondary,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Text(
+                        text = "${pr.comments + pr.reviewComments}",
+                        fontSize = 12.sp,
+                        color = SalvioTheme.colors.textSecondary
+                    )
                 }
                 BranchChip(label = pr.base.ref)
                 Spacer(modifier = Modifier.weight(1f))
@@ -279,7 +293,11 @@ private fun PullRequestCard(
                 HorizontalDivider(color = SalvioTheme.colors.borderMuted, thickness = 0.5.dp)
                 Spacer(modifier = Modifier.height(Spacing.sm))
                 if (files == null && filesFailed) {
-                    Text("파일 목록을 불러오지 못했습니다. 카드를 접었다 다시 펼치면 재시도합니다.", fontSize = 12.sp, color = SalvioTheme.colors.danger)
+                    Text(
+                        "파일 목록을 불러오지 못했습니다. 카드를 접었다 다시 펼치면 재시도합니다.",
+                        fontSize = 12.sp,
+                        color = SalvioTheme.colors.danger
+                    )
                 } else if (files == null) {
                     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)

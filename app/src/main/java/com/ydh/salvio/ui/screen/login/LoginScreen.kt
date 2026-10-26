@@ -12,11 +12,10 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.res.stringResource
-import com.ydh.salvio.R
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -25,6 +24,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ydh.salvio.R
 import com.ydh.salvio.ui.component.SalvioCard
 import com.ydh.salvio.ui.theme.*
 import com.ydh.salvio.viewmodel.AuthState
@@ -32,10 +32,7 @@ import com.ydh.salvio.viewmodel.AuthViewModel
 import com.ydh.salvio.viewmodel.DeviceFlowState
 
 @Composable
-fun LoginScreen(
-    authViewModel: AuthViewModel,
-    onLoginSuccess: () -> Unit
-) {
+fun LoginScreen(authViewModel: AuthViewModel, onLoginSuccess: () -> Unit) {
     val authState by authViewModel.authState.collectAsState()
     val deviceFlow by authViewModel.deviceFlow.collectAsState()
     val uriHandler = LocalUriHandler.current
@@ -236,7 +233,11 @@ private fun DeviceAuthCard(
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 IconButton(onClick = onCopy) {
-                    Icon(Icons.Default.ContentCopy, contentDescription = "코드 복사", tint = SalvioTheme.colors.textSecondary)
+                    Icon(
+                        Icons.Default.ContentCopy,
+                        contentDescription = "코드 복사",
+                        tint = SalvioTheme.colors.textSecondary
+                    )
                 }
             }
             Button(

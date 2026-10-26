@@ -2,7 +2,6 @@ package com.ydh.salvio.ui.navigation
 
 import android.net.Uri
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -16,12 +15,11 @@ import com.ydh.salvio.ui.screen.dashboard.DashboardScreen
 import com.ydh.salvio.ui.screen.issue.IssueScreen
 import com.ydh.salvio.ui.screen.login.LoginScreen
 import com.ydh.salvio.ui.screen.notification.NotificationScreen
-import com.ydh.salvio.ui.screen.search.SearchScreen
 import com.ydh.salvio.ui.screen.pullrequest.PullRequestScreen
 import com.ydh.salvio.ui.screen.release.ReleaseScreen
 import com.ydh.salvio.ui.screen.repos.RepoListScreen
+import com.ydh.salvio.ui.screen.search.SearchScreen
 import com.ydh.salvio.ui.screen.stats.StatsScreen
-import com.ydh.salvio.viewmodel.AuthState
 import com.ydh.salvio.viewmodel.AuthViewModel
 import com.ydh.salvio.viewmodel.DashboardViewModel
 import com.ydh.salvio.viewmodel.NotificationViewModel
@@ -136,7 +134,8 @@ fun SalvioNavGraph(themeViewModel: ThemeViewModel) {
             val owner = back.arguments?.getString("owner") ?: ""
             val repo = back.arguments?.getString("repo") ?: ""
             PullRequestScreen(
-                owner = owner, repoName = repo,
+                owner = owner,
+                repoName = repo,
                 dashboardViewModel = dashboardViewModel,
                 onBack = { navController.popBackStack() }
             )
@@ -152,7 +151,8 @@ fun SalvioNavGraph(themeViewModel: ThemeViewModel) {
             val owner = back.arguments?.getString("owner") ?: ""
             val repo = back.arguments?.getString("repo") ?: ""
             BranchScreen(
-                owner = owner, repoName = repo,
+                owner = owner,
+                repoName = repo,
                 dashboardViewModel = dashboardViewModel,
                 onBack = { navController.popBackStack() }
             )
@@ -168,7 +168,8 @@ fun SalvioNavGraph(themeViewModel: ThemeViewModel) {
             val owner = back.arguments?.getString("owner") ?: ""
             val repo = back.arguments?.getString("repo") ?: ""
             StatsScreen(
-                owner = owner, repoName = repo,
+                owner = owner,
+                repoName = repo,
                 dashboardViewModel = dashboardViewModel,
                 onBack = { navController.popBackStack() }
             )
@@ -184,7 +185,8 @@ fun SalvioNavGraph(themeViewModel: ThemeViewModel) {
             val owner = back.arguments?.getString("owner") ?: ""
             val repo = back.arguments?.getString("repo") ?: ""
             SearchScreen(
-                owner = owner, repoName = repo,
+                owner = owner,
+                repoName = repo,
                 dashboardViewModel = dashboardViewModel,
                 onBack = { navController.popBackStack() }
             )
@@ -200,7 +202,8 @@ fun SalvioNavGraph(themeViewModel: ThemeViewModel) {
             val owner = back.arguments?.getString("owner") ?: ""
             val repo = back.arguments?.getString("repo") ?: ""
             IssueScreen(
-                owner = owner, repoName = repo,
+                owner = owner,
+                repoName = repo,
                 dashboardViewModel = dashboardViewModel,
                 onBack = { navController.popBackStack() }
             )
@@ -216,7 +219,8 @@ fun SalvioNavGraph(themeViewModel: ThemeViewModel) {
             val owner = back.arguments?.getString("owner") ?: ""
             val repo = back.arguments?.getString("repo") ?: ""
             ReleaseScreen(
-                owner = owner, repoName = repo,
+                owner = owner,
+                repoName = repo,
                 dashboardViewModel = dashboardViewModel,
                 onBack = { navController.popBackStack() }
             )
@@ -234,7 +238,9 @@ fun SalvioNavGraph(themeViewModel: ThemeViewModel) {
             val repo = back.arguments?.getString("repo") ?: ""
             val sha = back.arguments?.getString("sha") ?: ""
             CommitDetailScreen(
-                owner = owner, repoName = repo, sha = sha,
+                owner = owner,
+                repoName = repo,
+                sha = sha,
                 dashboardViewModel = dashboardViewModel,
                 onBack = { navController.popBackStack() }
             )

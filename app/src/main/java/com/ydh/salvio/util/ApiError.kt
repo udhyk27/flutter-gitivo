@@ -1,9 +1,9 @@
 package com.ydh.salvio.util
 
-import retrofit2.HttpException
 import java.io.IOException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
+import retrofit2.HttpException
 
 /**
  * 예외로부터 HTTP 상태 코드를 추출한다. HTTP 오류가 아니면 null.

@@ -5,8 +5,8 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.ydh.salvio.SalvioApplication
 import com.ydh.salvio.util.Logger
-import kotlinx.coroutines.flow.first
 import java.io.IOException
+import kotlinx.coroutines.flow.first
 
 /**
  * 주기적으로 저장소 목록을 백그라운드에서 갱신한다.

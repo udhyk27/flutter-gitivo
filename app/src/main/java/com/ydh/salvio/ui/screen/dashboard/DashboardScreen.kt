@@ -13,12 +13,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.graphics.painter.ColorPainter
 import coil.compose.AsyncImage
 import com.ydh.salvio.data.model.GitHubCommit
 import com.ydh.salvio.ui.component.ErrorState
@@ -27,9 +27,9 @@ import com.ydh.salvio.ui.component.SalvioCard
 import com.ydh.salvio.ui.component.SalvioTopBar
 import com.ydh.salvio.ui.component.SectionHeader
 import com.ydh.salvio.ui.theme.*
+import com.ydh.salvio.util.relativeDays
 import com.ydh.salvio.viewmodel.DashboardUiState
 import com.ydh.salvio.viewmodel.DashboardViewModel
-import com.ydh.salvio.util.relativeDays
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -84,7 +84,9 @@ fun DashboardScreen(
         }
 
         if (state.error != null && state.stats == null) {
-            ErrorState(state.error ?: "데이터를 불러오지 못했습니다.", { dashboardViewModel.loadDashboard(owner, repoName, forceRefresh = true) }, Modifier.padding(paddingValues))
+            ErrorState(state.error ?: "데이터를 불러오지 못했습니다.", {
+                dashboardViewModel.loadDashboard(owner, repoName, forceRefresh = true)
+            }, Modifier.padding(paddingValues))
             return@Scaffold
         }
 
@@ -105,7 +107,15 @@ fun DashboardScreen(
                     item { RefreshErrorBanner(bannerError) }
                 }
                 item { StatsRow(state, onNavigateToPRs, onNavigateToBranches, onNavigateToStats) }
-                item { QuickActionsRow(onNavigateToPRs, onNavigateToBranches, onNavigateToStats, onNavigateToIssues, onNavigateToReleases) }
+                item {
+                    QuickActionsRow(
+                        onNavigateToPRs,
+                        onNavigateToBranches,
+                        onNavigateToStats,
+                        onNavigateToIssues,
+                        onNavigateToReleases
+                    )
+                }
                 item { RecentCommitsSection(state.recentCommits, onNavigateToCommit) }
                 item { OpenPRsSection(state, onNavigateToPRs) }
                 item { ContributorsSection(state) }
@@ -125,7 +135,11 @@ private fun RefreshingBanner() {
             horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp, color = SalvioTheme.colors.accent)
+            CircularProgressIndicator(
+                modifier = Modifier.size(14.dp),
+                strokeWidth = 2.dp,
+                color = SalvioTheme.colors.accent
+            )
             Text("업데이트 중...", fontSize = 13.sp, color = SalvioTheme.colors.accent)
         }
     }
@@ -142,7 +156,12 @@ private fun RefreshErrorBanner(message: String) {
             horizontalArrangement = Arrangement.spacedBy(Spacing.sm),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Default.ErrorOutline, contentDescription = null, tint = SalvioTheme.colors.danger, modifier = Modifier.size(16.dp))
+            Icon(
+                Icons.Default.ErrorOutline,
+                contentDescription = null,
+                tint = SalvioTheme.colors.danger,
+                modifier = Modifier.size(16.dp)
+            )
             Text(message, fontSize = 13.sp, color = SalvioTheme.colors.danger)
         }
     }
@@ -167,18 +186,18 @@ private fun StatsRow(
 }
 
 @Composable
-private fun StatCard(
-    modifier: Modifier = Modifier,
-    label: String,
-    value: String,
-    onClick: (() -> Unit)? = null
-) {
+private fun StatCard(modifier: Modifier = Modifier, label: String, value: String, onClick: (() -> Unit)? = null) {
     SalvioCard(modifier = modifier, onClick = onClick) {
         Column(
             modifier = Modifier.padding(vertical = Spacing.md, horizontal = Spacing.sm),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(text = value, fontSize = 22.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+            Text(
+                text = value,
+                fontSize = 22.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
             Spacer(modifier = Modifier.height(2.dp))
             Text(text = label, fontSize = 11.sp, color = SalvioTheme.colors.textSecondary)
         }
@@ -226,7 +245,12 @@ private fun ActionButton(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(Spacing.xs)
         ) {
-            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(20.dp)
+            )
             Text(text = label, fontSize = 11.sp, color = SalvioTheme.colors.textSecondary)
         }
     }
@@ -243,7 +267,12 @@ private fun RecentCommitsSection(commits: List<GitHubCommit>, onCommitClick: (sh
             } else {
                 commits.forEach { commit ->
                     CommitItem(commit, onClick = { onCommitClick(commit.sha) })
-                    if (commit != commits.last()) HorizontalDivider(color = SalvioTheme.colors.borderMuted, thickness = 0.5.dp)
+                    if (commit != commits.last()) {
+                        HorizontalDivider(
+                            color = SalvioTheme.colors.borderMuted,
+                            thickness = 0.5.dp
+                        )
+                    }
                 }
             }
         }
@@ -310,14 +339,39 @@ private fun OpenPRsSection(state: DashboardUiState, onNavigateToPRs: () -> Unit)
                         horizontalArrangement = Arrangement.spacedBy(Spacing.md),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(Icons.Default.MergeType, contentDescription = null, tint = SalvioTheme.colors.success, modifier = Modifier.size(16.dp))
+                        Icon(
+                            Icons.Default.MergeType,
+                            contentDescription = null,
+                            tint = SalvioTheme.colors.success,
+                            modifier = Modifier.size(16.dp)
+                        )
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = pr.title, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Text(text = "#${pr.number} • ${pr.user.login}", fontSize = 11.sp, color = SalvioTheme.colors.textSecondary)
+                            Text(
+                                text = pr.title,
+                                fontSize = 13.sp,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                text = "#${pr.number} • ${pr.user.login}",
+                                fontSize = 11.sp,
+                                color = SalvioTheme.colors.textSecondary
+                            )
                         }
-                        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = SalvioTheme.colors.textSecondary, modifier = Modifier.size(16.dp))
+                        Icon(
+                            Icons.Default.ChevronRight,
+                            contentDescription = null,
+                            tint = SalvioTheme.colors.textSecondary,
+                            modifier = Modifier.size(16.dp)
+                        )
                     }
-                    if (pr != state.openPrs.last()) HorizontalDivider(color = SalvioTheme.colors.borderMuted, thickness = 0.5.dp)
+                    if (pr != state.openPrs.last()) {
+                        HorizontalDivider(
+                            color = SalvioTheme.colors.borderMuted,
+                            thickness = 0.5.dp
+                        )
+                    }
                 }
             }
         }
@@ -345,10 +399,24 @@ private fun ContributorsSection(state: DashboardUiState) {
                             contentScale = ContentScale.Crop,
                             modifier = Modifier.size(28.dp).clip(CircleShape).background(SalvioTheme.colors.border)
                         )
-                        Text(text = contributor.login, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
-                        Text(text = "${contributor.contributions} commits", fontSize = 12.sp, color = SalvioTheme.colors.textSecondary)
+                        Text(
+                            text = contributor.login,
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            text = "${contributor.contributions} commits",
+                            fontSize = 12.sp,
+                            color = SalvioTheme.colors.textSecondary
+                        )
                     }
-                    if (contributor != top.last()) HorizontalDivider(color = SalvioTheme.colors.borderMuted, thickness = 0.5.dp)
+                    if (contributor != top.last()) {
+                        HorizontalDivider(
+                            color = SalvioTheme.colors.borderMuted,
+                            thickness = 0.5.dp
+                        )
+                    }
                 }
             }
         }

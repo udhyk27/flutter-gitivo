@@ -5,19 +5,19 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.ydh.salvio.SalvioApplication
 import com.ydh.salvio.data.model.*
-import kotlinx.coroutines.flow.update
 import com.ydh.salvio.data.repository.GitHubRepository
-import com.ydh.salvio.util.httpCode
-import com.ydh.salvio.util.toUserMessage
-import com.ydh.salvio.util.NetworkState
-import com.ydh.salvio.util.isAuthExpired
 import com.ydh.salvio.util.Logger
+import com.ydh.salvio.util.NetworkState
+import com.ydh.salvio.util.httpCode
+import com.ydh.salvio.util.isAuthExpired
+import com.ydh.salvio.util.toUserMessage
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class DashboardUiState(
@@ -159,14 +159,21 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             // 여러 호출 중 하나라도 실패하면 그 메시지를 노출한다.
             // (부분 실패를 "정상 0" 으로 숨기지 않기 위함)
             val firstError = listOf(
-                repoInfoResult, commitsResult, openPrsResult,
-                branchesResult, contributorsResult, closedResult
+                repoInfoResult,
+                commitsResult,
+                openPrsResult,
+                branchesResult,
+                contributorsResult,
+                closedResult
             ).firstNotNullOfOrNull { it.exceptionOrNull() }
 
             firstError?.let { Logger.e("loadDashboard failed for $owner/$repoName", it) }
             val errorMessage = firstError?.let {
-                if (it.isAuthExpired()) "인증이 만료되었습니다. 다시 로그인하세요."
-                else it.toUserMessage("대시보드를 불러오지 못했습니다.")
+                if (it.isAuthExpired()) {
+                    "인증이 만료되었습니다. 다시 로그인하세요."
+                } else {
+                    it.toUserMessage("대시보드를 불러오지 못했습니다.")
+                }
             }
 
             _dashboardState.value = DashboardUiState(
@@ -174,14 +181,18 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 repo = repoInfoResult.getOrNull(),
                 // 핵심 저장소 정보 조회 자체가 실패하면 통계는 신뢰할 수 없으므로 null
                 // → 화면이 전체 에러 상태를 보여주도록 한다.
-                stats = if (repoInfoResult.isSuccess) GitHubRepoStats(
-                    repoFullName = "$owner/$repoName",
-                    openPrCount = openPrsResult.getOrElse { emptyList() }.size,
-                    mergedPrCount = closedList.count { it.mergedAt != null },
-                    closedPrCount = closedList.count { it.mergedAt == null },
-                    branchCount = branchesResult.getOrElse { emptyList() }.size,
-                    contributorCount = contributorsResult.getOrElse { emptyList() }.size
-                ) else null,
+                stats = if (repoInfoResult.isSuccess) {
+                    GitHubRepoStats(
+                        repoFullName = "$owner/$repoName",
+                        openPrCount = openPrsResult.getOrElse { emptyList() }.size,
+                        mergedPrCount = closedList.count { it.mergedAt != null },
+                        closedPrCount = closedList.count { it.mergedAt == null },
+                        branchCount = branchesResult.getOrElse { emptyList() }.size,
+                        contributorCount = contributorsResult.getOrElse { emptyList() }.size
+                    )
+                } else {
+                    null
+                },
                 recentCommits = commitsResult.getOrElse { emptyList() }.take(5),
                 openPrs = openPrsResult.getOrElse { emptyList() }.take(3),
                 branches = branchesResult.getOrElse { emptyList() },
@@ -222,12 +233,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    private fun loadPrDetails(
-        owner: String,
-        repoName: String,
-        prs: List<GitHubPullRequest>,
-        forceRefresh: Boolean
-    ) {
+    private fun loadPrDetails(owner: String, repoName: String, prs: List<GitHubPullRequest>, forceRefresh: Boolean) {
         // 이전 상세 로드를 취소해 오래된 응답이 최신 목록을 덮어쓰지 않도록 한다.
         prDetailsJob?.cancel()
         prDetailsJob = viewModelScope.launch {
@@ -240,10 +246,16 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             prs.take(20).forEach { pr ->
                 repo.getPrReviews(owner, repoName, pr.number, forceRefresh)
                     .onSuccess { reviewMap[pr.number] = it }
-                    .onFailure { e -> anyFailed = true; Logger.e("PR ${pr.number} reviews failed", e) }
+                    .onFailure { e ->
+                        anyFailed = true
+                        Logger.e("PR ${pr.number} reviews failed", e)
+                    }
                 repo.getCheckRuns(owner, repoName, pr.head.sha, forceRefresh)
                     .onSuccess { checkRunMap[pr.number] = it }
-                    .onFailure { e -> anyFailed = true; Logger.e("PR ${pr.number} check runs failed", e) }
+                    .onFailure { e ->
+                        anyFailed = true
+                        Logger.e("PR ${pr.number} check runs failed", e)
+                    }
                 _prState.update { it.copy(prReviews = reviewMap.toMap(), prCheckRuns = checkRunMap.toMap()) }
             }
             if (anyFailed) {
@@ -317,7 +329,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             repo.getBranchLatestCommit(owner, repoName, branchName)
                 .onSuccess { commit ->
                     _branchState.update {
-                        it.copy(branchCommits = it.branchCommits + (branchName to commit), commitErrors = it.commitErrors - branchName)
+                        it.copy(
+                            branchCommits = it.branchCommits + (branchName to commit),
+                            commitErrors = it.commitErrors - branchName
+                        )
                     }
                 }
                 .onFailure { e ->
@@ -421,7 +436,12 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             val repo = getRepo() ?: return@launch
             repo.getPrFiles(owner, repoName, prNumber)
                 .onSuccess { files ->
-                    _prState.update { it.copy(prFiles = it.prFiles + (prNumber to files), fileErrors = it.fileErrors - prNumber) }
+                    _prState.update {
+                        it.copy(
+                            prFiles = it.prFiles + (prNumber to files),
+                            fileErrors = it.fileErrors - prNumber
+                        )
+                    }
                 }
                 .onFailure { e ->
                     Logger.e("PR $prNumber files failed", e)

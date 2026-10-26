@@ -1,6 +1,5 @@
 package com.ydh.salvio.ui.screen.search
 
-import com.ydh.salvio.util.openInBrowser
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -23,22 +22,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ydh.salvio.data.model.CodeSearchItem
 import com.ydh.salvio.ui.component.EmptyState
-import com.ydh.salvio.ui.component.ErrorState
 import com.ydh.salvio.ui.component.LoadingState
 import com.ydh.salvio.ui.component.SalvioCard
 import com.ydh.salvio.ui.component.SalvioTopBar
 import com.ydh.salvio.ui.component.StatusBadge
 import com.ydh.salvio.ui.theme.*
+import com.ydh.salvio.util.openInBrowser
 import com.ydh.salvio.viewmodel.DashboardViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchScreen(
-    owner: String,
-    repoName: String,
-    dashboardViewModel: DashboardViewModel,
-    onBack: () -> Unit
-) {
+fun SearchScreen(owner: String, repoName: String, dashboardViewModel: DashboardViewModel, onBack: () -> Unit) {
     val state by dashboardViewModel.searchState.collectAsState()
     var query by remember { mutableStateOf("") }
     val focusManager = LocalFocusManager.current
@@ -70,12 +64,28 @@ fun SearchScreen(
                     value = query,
                     onValueChange = { query = it },
                     modifier = Modifier.weight(1f),
-                    placeholder = { Text("함수명, 변수명, 패턴 검색", color = SalvioTheme.colors.textSecondary, fontSize = 13.sp) },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = SalvioTheme.colors.textSecondary) },
+                    placeholder = {
+                        Text(
+                            "함수명, 변수명, 패턴 검색",
+                            color = SalvioTheme.colors.textSecondary,
+                            fontSize = 13.sp
+                        )
+                    },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Default.Search,
+                            contentDescription = null,
+                            tint = SalvioTheme.colors.textSecondary
+                        )
+                    },
                     trailingIcon = {
                         if (query.isNotEmpty()) {
                             IconButton(onClick = { query = "" }) {
-                                Icon(Icons.Default.Clear, contentDescription = "지우기", tint = SalvioTheme.colors.textSecondary)
+                                Icon(
+                                    Icons.Default.Clear,
+                                    contentDescription = "지우기",
+                                    tint = SalvioTheme.colors.textSecondary
+                                )
                             }
                         }
                     },
@@ -129,7 +139,12 @@ fun SearchScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(Spacing.sm)
                     ) {
-                        Icon(Icons.Default.ErrorOutline, contentDescription = null, tint = SalvioTheme.colors.danger, modifier = Modifier.size(40.dp))
+                        Icon(
+                            Icons.Default.ErrorOutline,
+                            contentDescription = null,
+                            tint = SalvioTheme.colors.danger,
+                            modifier = Modifier.size(40.dp)
+                        )
                         Text(state.error!!, color = SalvioTheme.colors.textSecondary)
                     }
                 }
@@ -137,7 +152,11 @@ fun SearchScreen(
                 state.results != null -> {
                     val results = state.results!!
                     if (results.items.isEmpty()) {
-                        EmptyState("\"${state.query}\"에 대한 결과가 없습니다.", Icons.Default.SearchOff, hint = "다른 키워드로 다시 검색해 보세요.")
+                        EmptyState(
+                            "\"${state.query}\"에 대한 결과가 없습니다.",
+                            Icons.Default.SearchOff,
+                            hint = "다른 키워드로 다시 검색해 보세요."
+                        )
                     } else {
                         Column {
                             Row(
@@ -148,10 +167,11 @@ fun SearchScreen(
                                 horizontalArrangement = Arrangement.spacedBy(Spacing.sm)
                             ) {
                                 Text(
-                                    text = if (results.totalCount > results.items.size)
+                                    text = if (results.totalCount > results.items.size) {
                                         "${results.totalCount}개 중 ${results.items.size}개 표시"
-                                    else
-                                        "${results.totalCount}개 결과",
+                                    } else {
+                                        "${results.totalCount}개 결과"
+                                    },
                                     fontSize = 12.sp,
                                     color = SalvioTheme.colors.textSecondary
                                 )
