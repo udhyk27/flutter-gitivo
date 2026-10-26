@@ -1,5 +1,8 @@
 package com.ydh.salvio.util
 
+import java.io.IOException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.Protocol
 import okhttp3.Request
@@ -12,9 +15,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import retrofit2.HttpException
 import retrofit2.Response
-import java.io.IOException
-import java.net.SocketTimeoutException
-import java.net.UnknownHostException
 
 class ApiErrorTest {
 

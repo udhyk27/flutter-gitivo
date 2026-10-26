@@ -1,20 +1,19 @@
 package com.ydh.salvio.util
 
+import java.time.Instant
+import java.time.ZoneId
+import java.time.temporal.ChronoUnit
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.time.Instant
-import java.time.ZoneId
-import java.time.temporal.ChronoUnit
 
 class DateFormatTest {
 
     private val utc = ZoneId.of("UTC")
     private val now = Instant.parse("2026-06-01T12:00:00Z")
 
-    private fun ago(amount: Long, unit: ChronoUnit): String =
-        now.minus(amount, unit).toString()
+    private fun ago(amount: Long, unit: ChronoUnit): String = now.minus(amount, unit).toString()
 
     // ---- formatAbsolute ----
 

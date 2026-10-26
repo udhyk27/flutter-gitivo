@@ -55,7 +55,10 @@ class GitHubRepositoryCacheTest {
     @Test
     fun getPullRequests_expiredCacheRefetchesAndReplacesCache() = runBlocking {
         val stale = CachedPr(
-            "user/repo:7:open", "user/repo", "open", gson.toJson(pr(7)),
+            "user/repo:7:open",
+            "user/repo",
+            "open",
+            gson.toJson(pr(7)),
             cachedAt = System.currentTimeMillis() - 10 * 60 * 1000L
         )
         coEvery { dao.getPrs("user/repo", "open") } returns listOf(stale)
@@ -81,7 +84,13 @@ class GitHubRepositoryCacheTest {
 
         assertEquals(listOf(1, 3), result.map { it.number })
         coVerify(exactly = 1) {
-            dao.insertIssues(match { list: List<CachedIssue> -> list.map { it.id } == listOf("user/repo:1:open", "user/repo:3:open") })
+            dao.insertIssues(
+                match { list: List<CachedIssue> ->
+                    list.map {
+                        it.id
+                    } == listOf("user/repo:1:open", "user/repo:3:open")
+                }
+            )
         }
         assertTrue(result.none { it.pullRequest != null })
     }
