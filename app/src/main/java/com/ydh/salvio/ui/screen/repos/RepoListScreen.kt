@@ -120,7 +120,11 @@ fun RepoListScreen(
                         Icon(
                             if (showFavoritesOnly) Icons.Default.Star else Icons.Outlined.Star,
                             contentDescription = "즐겨찾기만 보기",
-                            tint = if (showFavoritesOnly) SalvioTheme.colors.attention else SalvioTheme.colors.textSecondary
+                            tint = if (showFavoritesOnly) {
+                                SalvioTheme.colors.attention
+                            } else {
+                                SalvioTheme.colors.textSecondary
+                            }
                         )
                     }
                     IconButton(onClick = { repoViewModel.loadRepos(forceRefresh = true) }) {

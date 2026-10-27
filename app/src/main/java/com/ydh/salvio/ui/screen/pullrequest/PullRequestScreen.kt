@@ -96,7 +96,8 @@ fun PullRequestScreen(owner: String, repoName: String, dashboardViewModel: Dashb
 
             when {
                 state.isLoading && state.openPrs.isEmpty() -> LoadingState()
-                state.error != null && state.openPrs.isEmpty() && state.mergedPrs.isEmpty() && state.closedPrs.isEmpty() ->
+                state.error != null &&
+                    state.openPrs.isEmpty() && state.mergedPrs.isEmpty() && state.closedPrs.isEmpty() ->
                     ErrorState(state.error ?: "PR 목록을 불러오지 못했습니다.", onRetry = {
                         dashboardViewModel.loadPullRequests(owner, repoName, forceRefresh = true)
                     })

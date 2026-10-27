@@ -29,14 +29,14 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun cacheDao(): CacheDao
 
     companion object {
-        @Volatile private var INSTANCE: AppDatabase? = null
+        @Volatile private var instance: AppDatabase? = null
 
-        fun getInstance(context: Context): AppDatabase = INSTANCE ?: synchronized(this) {
-            INSTANCE ?: Room.databaseBuilder(
+        fun getInstance(context: Context): AppDatabase = instance ?: synchronized(this) {
+            instance ?: Room.databaseBuilder(
                 context.applicationContext,
                 AppDatabase::class.java,
                 "salvio_cache.db"
-            ).fallbackToDestructiveMigration().build().also { INSTANCE = it }
+            ).fallbackToDestructiveMigration().build().also { instance = it }
         }
     }
 }

@@ -324,7 +324,7 @@ private fun ContributorRow(
             val ratio = contributor.contributions.toFloat() / maxContributions.toFloat()
             LinearProgressIndicator(
                 progress = { ratio },
-                modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShapeSmall()),
+                modifier = Modifier.fillMaxWidth().height(4.dp).clip(roundedCornerShapeSmall()),
                 color = if (rank <= 3) rankColor else MaterialTheme.colorScheme.primary,
                 trackColor = MaterialTheme.colorScheme.outlineVariant
             )
@@ -359,7 +359,7 @@ private fun RecentCommitAuthorsCard(commits: List<Pair<String, Int>>) {
                         val ratio = count.toFloat() / maxCount.toFloat()
                         LinearProgressIndicator(
                             progress = { ratio },
-                            modifier = Modifier.weight(1f).height(6.dp).clip(RoundedCornerShapeSmall()),
+                            modifier = Modifier.weight(1f).height(6.dp).clip(roundedCornerShapeSmall()),
                             color = MaterialTheme.colorScheme.primary,
                             trackColor = MaterialTheme.colorScheme.outlineVariant
                         )
@@ -376,4 +376,4 @@ private fun RecentCommitAuthorsCard(commits: List<Pair<String, Int>>) {
     }
 }
 
-private fun RoundedCornerShapeSmall() = androidx.compose.foundation.shape.RoundedCornerShape(3.dp)
+private fun roundedCornerShapeSmall() = androidx.compose.foundation.shape.RoundedCornerShape(3.dp)

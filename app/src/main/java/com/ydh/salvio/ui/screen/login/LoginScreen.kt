@@ -90,12 +90,20 @@ fun LoginScreen(authViewModel: AuthViewModel, onLoginSuccess: () -> Unit) {
                         value = token,
                         onValueChange = { token = it },
                         placeholder = { Text("ghp_xxxxxxxxxxxxxxxxxxxx", color = SalvioTheme.colors.textSecondary) },
-                        visualTransformation = if (showToken) VisualTransformation.None else PasswordVisualTransformation(),
+                        visualTransformation = if (showToken) {
+                            VisualTransformation.None
+                        } else {
+                            PasswordVisualTransformation()
+                        },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                         trailingIcon = {
                             IconButton(onClick = { showToken = !showToken }) {
                                 Icon(
-                                    imageVector = if (showToken) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    imageVector = if (showToken) {
+                                        Icons.Default.VisibilityOff
+                                    } else {
+                                        Icons.Default.Visibility
+                                    },
                                     contentDescription = null,
                                     tint = SalvioTheme.colors.textSecondary
                                 )
