@@ -5,6 +5,7 @@ import com.google.gson.reflect.TypeToken
 import com.ydh.salvio.data.api.GitHubApi
 import com.ydh.salvio.data.local.*
 import com.ydh.salvio.data.model.*
+import retrofit2.HttpException
 
 class GitHubRepository(
     private val api: GitHubApi,
@@ -251,7 +252,8 @@ class GitHubRepository(
     }
 
     suspend fun markNotificationRead(threadId: String): Result<Unit> = runCatching {
-        api.markNotificationRead(threadId)
+        val response = api.markNotificationRead(threadId)
+        if (!response.isSuccessful) throw HttpException(response)
         Unit
     }
 
