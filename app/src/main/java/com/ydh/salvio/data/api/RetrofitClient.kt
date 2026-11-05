@@ -27,7 +27,6 @@ object RetrofitClient {
      */
     private val sharedClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
-            .addInterceptor(loggingInterceptor())
             .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
             .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
             .build()
@@ -51,6 +50,9 @@ object RetrofitClient {
             }
 
             val client = sharedClient.newBuilder()
+                // OAuth calls intentionally do not use this logger: device codes and
+                // access tokens are present in their request/response bodies.
+                .addInterceptor(loggingInterceptor())
                 .addInterceptor(authInterceptor)
                 .build()
 

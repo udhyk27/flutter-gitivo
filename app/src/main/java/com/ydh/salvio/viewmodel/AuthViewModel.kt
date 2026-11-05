@@ -86,7 +86,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                     // 401 응답이면 자동 로그아웃
                     if (e.isAuthExpired()) {
                         Logger.authFailed("Token expired (401)")
-                        logout()
+                        clearSession()
                         _authState.value = AuthState.Error("인증이 만료되었습니다. 다시 로그인하세요.")
                     } else {
                         val msg = e.toUserMessage("인증에 실패했습니다.")
@@ -172,15 +172,20 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
     fun logout() {
         viewModelScope.launch {
-            deviceFlowJob?.cancel()
-            _deviceFlow.value = DeviceFlowState.Idle
-            dataStore.clearToken()
-            // 백그라운드 PR 감시 중단 + 이전 사용자 데이터(메모리/Room 캐시) 제거
-            PrCheckWorker.cancel(app)
-            app.clearSession()
-            withContext(Dispatchers.IO) { app.database.clearAllTables() }
+            clearSession()
             _currentUser.value = null
             _authState.value = AuthState.Idle
         }
+    }
+
+    private suspend fun clearSession() {
+        deviceFlowJob?.cancel()
+        _deviceFlow.value = DeviceFlowState.Idle
+        dataStore.clearToken()
+        // 백그라운드 PR 감시 중단 + 이전 사용자 데이터(메모리/Room 캐시) 제거
+        PrCheckWorker.cancel(app)
+        app.clearSession()
+        withContext(Dispatchers.IO) { app.database.clearAllTables() }
+        _currentUser.value = null
     }
 }
