@@ -44,7 +44,8 @@ interface GitHubApi {
     suspend fun getContributors(
         @Path("owner") owner: String,
         @Path("repo") repo: String,
-        @Query("per_page") perPage: Int = 100
+        @Query("per_page") perPage: Int = 100,
+        @Query("page") page: Int = 1
     ): List<GitHubContributor>
 
     @GET("repos/{owner}/{repo}")
@@ -68,7 +69,9 @@ interface GitHubApi {
     suspend fun getPrReviews(
         @Path("owner") owner: String,
         @Path("repo") repo: String,
-        @Path("pull_number") pullNumber: Int
+        @Path("pull_number") pullNumber: Int,
+        @Query("per_page") perPage: Int = 100,
+        @Query("page") page: Int = 1
     ): List<GitHubPrReview>
 
     @GET("repos/{owner}/{repo}/stats/commit_activity")
@@ -87,7 +90,8 @@ interface GitHubApi {
     suspend fun getReleases(
         @Path("owner") owner: String,
         @Path("repo") repo: String,
-        @Query("per_page") perPage: Int = 100
+        @Query("per_page") perPage: Int = 100,
+        @Query("page") page: Int = 1
     ): List<GitHubRelease>
 
     @GET("repos/{owner}/{repo}/commits/{ref}/check-runs")
@@ -102,7 +106,8 @@ interface GitHubApi {
         @Path("owner") owner: String,
         @Path("repo") repo: String,
         @Path("pull_number") pullNumber: Int,
-        @Query("per_page") perPage: Int = 100
+        @Query("per_page") perPage: Int = 100,
+        @Query("page") page: Int = 1
     ): List<PullRequestFile>
 
     @GET("repos/{owner}/{repo}/traffic/views")

@@ -110,7 +110,9 @@ class GitHubRepository(
             val type = object : TypeToken<List<GitHubContributor>>() {}.type
             return@runCatching gson.fromJson(cached.json, type)
         }
-        val contributors = api.getContributors(owner, repo)
+        val contributors = fetchAllPages { page ->
+            api.getContributors(owner, repo, perPage = PAGE_SIZE, page = page)
+        }
         dao?.insertContributors(CachedContributors(repoFullName, gson.toJson(contributors)))
         contributors
     }
@@ -144,7 +146,9 @@ class GitHubRepository(
             val type = object : TypeToken<GitHubPrReview>() {}.type
             return@runCatching cached.map { gson.fromJson(it.json, type) }
         }
-        val reviews = api.getPrReviews(owner, repo, prNumber)
+        val reviews = fetchAllPages { page ->
+            api.getPrReviews(owner, repo, prNumber, perPage = PAGE_SIZE, page = page)
+        }
         dao?.deletePrReviews(repoFullName, prNumber)
         dao?.insertPrReviews(
             reviews.map {
@@ -183,7 +187,9 @@ class GitHubRepository(
                 val type = object : TypeToken<GitHubRelease>() {}.type
                 return@runCatching cached.map { gson.fromJson(it.json, type) }
             }
-            val releases = api.getReleases(owner, repo)
+            val releases = fetchAllPages { page ->
+                api.getReleases(owner, repo, perPage = PAGE_SIZE, page = page)
+            }
             dao?.deleteReleases(repoFullName)
             dao?.insertReleases(releases.map { CachedRelease("$repoFullName:${it.id}", repoFullName, gson.toJson(it)) })
             releases
@@ -196,7 +202,9 @@ class GitHubRepository(
             val type = object : TypeToken<List<PullRequestFile>>() {}.type
             return@runCatching gson.fromJson(cached.json, type)
         }
-        val files = api.getPrFiles(owner, repo, prNumber)
+        val files = fetchAllPages { page ->
+            api.getPrFiles(owner, repo, prNumber, perPage = PAGE_SIZE, page = page)
+        }
         dao?.insertPrFiles(CachedPrFiles("$repoFullName:$prNumber", repoFullName, prNumber, gson.toJson(files)))
         files
     }
