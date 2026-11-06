@@ -7,7 +7,6 @@ import com.ydh.salvio.SalvioApplication
 import com.ydh.salvio.data.model.GitHubRepo
 import com.ydh.salvio.data.worker.PrCheckWorker
 import com.ydh.salvio.util.Logger
-import com.ydh.salvio.util.NetworkState
 import com.ydh.salvio.util.isAuthExpired
 import com.ydh.salvio.util.toUserMessage
 import kotlinx.coroutines.flow.*
@@ -60,12 +59,6 @@ class RepoViewModel(application: Application) : AndroidViewModel(application) {
             // 이미 목록이 있으면 전체 로딩 화면 대신 새로고침 인디케이터만 띄운다.
             val hasData = _repoListState.value is RepoListState.Success
             if (hasData) _isRefreshing.value = true else _repoListState.value = RepoListState.Loading
-
-            if (!NetworkState.isNetworkAvailable(app)) {
-                _repoListState.value = RepoListState.Error("인터넷에 연결되어 있지 않습니다.")
-                _isRefreshing.value = false
-                return@launch
-            }
 
             val token = dataStore.token.first() ?: run {
                 _repoListState.value = RepoListState.Error("로그인이 필요합니다. 다시 로그인해 주세요.")

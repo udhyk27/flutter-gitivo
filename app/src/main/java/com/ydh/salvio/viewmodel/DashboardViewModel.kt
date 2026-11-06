@@ -7,7 +7,6 @@ import com.ydh.salvio.SalvioApplication
 import com.ydh.salvio.data.model.*
 import com.ydh.salvio.data.repository.GitHubRepository
 import com.ydh.salvio.util.Logger
-import com.ydh.salvio.util.NetworkState
 import com.ydh.salvio.util.httpCode
 import com.ydh.salvio.util.isAuthExpired
 import com.ydh.salvio.util.toUserMessage
@@ -130,11 +129,6 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     fun loadDashboard(owner: String, repoName: String, forceRefresh: Boolean = false) {
         viewModelScope.launch {
             _dashboardState.value = _dashboardState.value.copy(isLoading = true, error = null)
-
-            if (!NetworkState.isNetworkAvailable(app)) {
-                _dashboardState.value = _dashboardState.value.copy(isLoading = false, error = "인터넷에 연결되어 있지 않습니다.")
-                return@launch
-            }
 
             val repo = getRepo() ?: run {
                 _dashboardState.value = _dashboardState.value.copy(isLoading = false, error = NO_TOKEN_MSG)
@@ -411,7 +405,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
             _searchState.value = SearchUiState(isLoading = true, query = query)
-            val repo = getRepo() ?: return@launch
+            val repo = getRepo() ?: run {
+                _searchState.value = SearchUiState(error = NO_TOKEN_MSG, query = query)
+                return@launch
+            }
             repo.searchCode(owner, repoName, query).fold(
                 onSuccess = { _searchState.value = SearchUiState(results = it, query = query) },
                 onFailure = {
