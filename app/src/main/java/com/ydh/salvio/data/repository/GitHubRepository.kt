@@ -6,6 +6,7 @@ import com.ydh.salvio.data.api.GitHubApi
 import com.ydh.salvio.data.local.*
 import com.ydh.salvio.data.model.*
 import retrofit2.HttpException
+import kotlinx.coroutines.CancellationException
 
 class GitHubRepository(
     private val api: GitHubApi,
@@ -19,6 +20,29 @@ class GitHubRepository(
     private fun isExpired(cachedAt: Long, maxAgeMs: Long = cacheMaxAgeMs) =
         System.currentTimeMillis() - cachedAt > maxAgeMs
 
+    /** Return stale cached data when a refresh fails, without refreshing its timestamp. */
+    private suspend fun <T : Any> fetchOrStale(
+        staleValue: T?,
+        fetch: suspend () -> T,
+        save: suspend (T) -> Unit
+    ): T {
+        try {
+            return fetch().also { save(it) }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            return staleValue ?: throw error
+        }
+    }
+
+    private suspend fun <T> resultOf(block: suspend () -> T): Result<T> = try {
+        Result.success(block())
+    } catch (cancelled: CancellationException) {
+        throw cancelled
+    } catch (error: Exception) {
+        Result.failure(error)
+    }
+
     // 마지막 페이지 판정은 응답 개수 기준(필터링 전). 과도한 요청을 막기 위해 최대 페이지 수를 둔다.
     private suspend fun <T> fetchAllPages(fetch: suspend (page: Int) -> List<T>): List<T> {
         val all = mutableListOf<T>()
@@ -30,16 +54,21 @@ class GitHubRepository(
         return all
     }
 
-    suspend fun getUser(): Result<GitHubUser> = runCatching { api.getAuthenticatedUser() }
+    suspend fun getUser(): Result<GitHubUser> = resultOf { api.getAuthenticatedUser() }
 
-    suspend fun getUserRepos(forceRefresh: Boolean = false): Result<List<GitHubRepo>> = runCatching {
+    suspend fun getUserRepos(forceRefresh: Boolean = false): Result<List<GitHubRepo>> = resultOf {
         val cached = dao?.getAllRepos()
-        if (!forceRefresh && !cached.isNullOrEmpty() && !isExpired(cached.first().cachedAt)) {
-            return@runCatching cached.map { gson.fromJson(it.json, GitHubRepo::class.java) }
+        val cachedRepos = cached?.takeIf { it.isNotEmpty() }?.map {
+            gson.fromJson(it.json, GitHubRepo::class.java)
         }
-        val repos = fetchAllPages { page -> api.getUserRepos(perPage = PAGE_SIZE, page = page) }
-        dao?.insertRepos(repos.map { CachedRepo(it.fullName, gson.toJson(it)) })
-        repos
+        if (!forceRefresh && !cached.isNullOrEmpty() && !isExpired(cached.first().cachedAt)) {
+            return@resultOf cachedRepos.orEmpty()
+        }
+        fetchOrStale(
+            cachedRepos,
+            fetch = { fetchAllPages { page -> api.getUserRepos(perPage = PAGE_SIZE, page = page) } },
+            save = { repos -> dao?.insertRepos(repos.map { CachedRepo(it.fullName, gson.toJson(it)) }) }
+        )
     }
 
     suspend fun getCommits(
@@ -47,21 +76,26 @@ class GitHubRepository(
         repo: String,
         page: Int = 1,
         forceRefresh: Boolean = false
-    ): Result<List<GitHubCommit>> = runCatching {
+    ): Result<List<GitHubCommit>> = resultOf {
         val repoFullName = "$owner/$repo"
         if (page == 1) {
             val cached = dao?.getCommits(repoFullName)
-            if (!forceRefresh && !cached.isNullOrEmpty() && !isExpired(cached.first().cachedAt)) {
-                val type = object : TypeToken<GitHubCommit>() {}.type
-                return@runCatching cached.map { gson.fromJson(it.json, type) }
+            val cachedCommits = cached?.takeIf { it.isNotEmpty() }?.map {
+                gson.fromJson<GitHubCommit>(it.json, object : TypeToken<GitHubCommit>() {}.type)
             }
+            if (!forceRefresh && !cached.isNullOrEmpty() && !isExpired(cached.first().cachedAt)) {
+                return@resultOf cachedCommits.orEmpty()
+            }
+            return@resultOf fetchOrStale(
+                cachedCommits,
+                fetch = { api.getCommits(owner, repo, perPage = 100, page = page) },
+                save = { commits ->
+                    dao?.deleteCommits(repoFullName)
+                    dao?.insertCommits(commits.map { CachedCommit("$repoFullName:${it.sha}", repoFullName, gson.toJson(it)) })
+                }
+            )
         }
-        val commits = api.getCommits(owner, repo, perPage = 100, page = page)
-        if (page == 1) {
-            dao?.deleteCommits(repoFullName)
-            dao?.insertCommits(commits.map { CachedCommit("$repoFullName:${it.sha}", repoFullName, gson.toJson(it)) })
-        }
-        commits
+        api.getCommits(owner, repo, perPage = 100, page = page)
     }
 
     suspend fun getPullRequests(
@@ -69,93 +103,105 @@ class GitHubRepository(
         repo: String,
         state: String = "open",
         forceRefresh: Boolean = false
-    ): Result<List<GitHubPullRequest>> = runCatching {
+    ): Result<List<GitHubPullRequest>> = resultOf {
         val repoFullName = "$owner/$repo"
         val cached = dao?.getPrs(repoFullName, state)
+        val type = object : TypeToken<GitHubPullRequest>() {}.type
+        val cachedPrs = cached?.takeIf { it.isNotEmpty() }?.map { gson.fromJson<GitHubPullRequest>(it.json, type) }
         if (!forceRefresh && !cached.isNullOrEmpty() && !isExpired(cached.first().cachedAt, shortCacheMs)) {
-            val type = object : TypeToken<GitHubPullRequest>() {}.type
-            return@runCatching cached.map { gson.fromJson(it.json, type) }
+            return@resultOf cachedPrs.orEmpty()
         }
-        val prs =
-            fetchAllPages { page -> api.getPullRequests(owner, repo, state = state, perPage = PAGE_SIZE, page = page) }
-        dao?.deletePrs(repoFullName, state)
-        dao?.insertPrs(prs.map { CachedPr("$repoFullName:${it.number}:$state", repoFullName, state, gson.toJson(it)) })
-        prs
+        fetchOrStale(
+            cachedPrs,
+            fetch = { fetchAllPages { page -> api.getPullRequests(owner, repo, state = state, perPage = PAGE_SIZE, page = page) } },
+            save = { prs ->
+                dao?.deletePrs(repoFullName, state)
+                dao?.insertPrs(prs.map { CachedPr("$repoFullName:${it.number}:$state", repoFullName, state, gson.toJson(it)) })
+            }
+        )
     }
 
     suspend fun getBranches(owner: String, repo: String, forceRefresh: Boolean = false): Result<List<GitHubBranch>> =
-        runCatching {
+        resultOf {
             val repoFullName = "$owner/$repo"
             val cached = dao?.getBranches(repoFullName)
+            val type = object : TypeToken<GitHubBranch>() {}.type
+            val cachedBranches = cached?.takeIf { it.isNotEmpty() }?.map { gson.fromJson<GitHubBranch>(it.json, type) }
             if (!forceRefresh && !cached.isNullOrEmpty() && !isExpired(cached.first().cachedAt)) {
-                val type = object : TypeToken<GitHubBranch>() {}.type
-                return@runCatching cached.map { gson.fromJson(it.json, type) }
+                return@resultOf cachedBranches.orEmpty()
             }
-            val branches = fetchAllPages { page -> api.getBranches(owner, repo, perPage = PAGE_SIZE, page = page) }
-            dao?.deleteBranches(repoFullName)
-            dao?.insertBranches(
-                branches.map { CachedBranch("$repoFullName:${it.name}", repoFullName, gson.toJson(it)) }
+            fetchOrStale(
+                cachedBranches,
+                fetch = { fetchAllPages { page -> api.getBranches(owner, repo, perPage = PAGE_SIZE, page = page) } },
+                save = { branches ->
+                    dao?.deleteBranches(repoFullName)
+                    dao?.insertBranches(branches.map { CachedBranch("$repoFullName:${it.name}", repoFullName, gson.toJson(it)) })
+                }
             )
-            branches
         }
 
     suspend fun getContributors(
         owner: String,
         repo: String,
         forceRefresh: Boolean = false
-    ): Result<List<GitHubContributor>> = runCatching {
+    ): Result<List<GitHubContributor>> = resultOf {
         val repoFullName = "$owner/$repo"
         val cached = dao?.getContributors(repoFullName)
+        val type = object : TypeToken<List<GitHubContributor>>() {}.type
+        val cachedContributors = cached?.let { gson.fromJson<List<GitHubContributor>>(it.json, type) }
         if (!forceRefresh && cached != null && !isExpired(cached.cachedAt, longCacheMs)) {
-            val type = object : TypeToken<List<GitHubContributor>>() {}.type
-            return@runCatching gson.fromJson(cached.json, type)
+            return@resultOf cachedContributors.orEmpty()
         }
-        val contributors = fetchAllPages { page ->
-            api.getContributors(owner, repo, perPage = PAGE_SIZE, page = page)
-        }
-        dao?.insertContributors(CachedContributors(repoFullName, gson.toJson(contributors)))
-        contributors
+        fetchOrStale(
+            cachedContributors,
+            fetch = { fetchAllPages { page -> api.getContributors(owner, repo, perPage = PAGE_SIZE, page = page) } },
+            save = { contributors -> dao?.insertContributors(CachedContributors(repoFullName, gson.toJson(contributors))) }
+        )
     }
 
-    suspend fun getRepo(owner: String, repo: String, forceRefresh: Boolean = false): Result<GitHubRepo> = runCatching {
+    suspend fun getRepo(owner: String, repo: String, forceRefresh: Boolean = false): Result<GitHubRepo> = resultOf {
         val repoFullName = "$owner/$repo"
         val cached = dao?.getRepo(repoFullName)
+        val cachedRepo = cached?.let { gson.fromJson(it.json, GitHubRepo::class.java) }
         if (!forceRefresh && cached != null && !isExpired(cached.cachedAt)) {
-            return@runCatching gson.fromJson(cached.json, GitHubRepo::class.java)
+            return@resultOf cachedRepo!!
         }
-        val result = api.getRepo(owner, repo)
-        dao?.insertRepo(CachedRepo(result.fullName, gson.toJson(result)))
-        result
+        fetchOrStale(
+            cachedRepo,
+            fetch = { api.getRepo(owner, repo) },
+            save = { result -> dao?.insertRepo(CachedRepo(result.fullName, gson.toJson(result))) }
+        )
     }
 
     suspend fun getBranchLatestCommit(owner: String, repo: String, ref: String): Result<GitHubCommit> =
-        runCatching { api.getBranchLatestCommit(owner, repo, ref) }
+        resultOf { api.getBranchLatestCommit(owner, repo, ref) }
 
     suspend fun getCommitDetail(owner: String, repo: String, sha: String): Result<GitHubCommitDetail> =
-        runCatching { api.getCommitDetail(owner, repo, sha) }
+        resultOf { api.getCommitDetail(owner, repo, sha) }
 
     suspend fun getPrReviews(
         owner: String,
         repo: String,
         prNumber: Int,
         forceRefresh: Boolean = false
-    ): Result<List<GitHubPrReview>> = runCatching {
+    ): Result<List<GitHubPrReview>> = resultOf {
         val repoFullName = "$owner/$repo"
         val cached = dao?.getPrReviews(repoFullName, prNumber)
+        val type = object : TypeToken<GitHubPrReview>() {}.type
+        val cachedReviews = cached?.takeIf { it.isNotEmpty() }?.map { gson.fromJson<GitHubPrReview>(it.json, type) }
         if (!forceRefresh && !cached.isNullOrEmpty() && !isExpired(cached.first().cachedAt)) {
-            val type = object : TypeToken<GitHubPrReview>() {}.type
-            return@runCatching cached.map { gson.fromJson(it.json, type) }
+            return@resultOf cachedReviews.orEmpty()
         }
-        val reviews = fetchAllPages { page ->
-            api.getPrReviews(owner, repo, prNumber, perPage = PAGE_SIZE, page = page)
-        }
-        dao?.deletePrReviews(repoFullName, prNumber)
-        dao?.insertPrReviews(
-            reviews.map {
-                CachedPrReview("$repoFullName:$prNumber:${it.id}", repoFullName, prNumber, gson.toJson(it))
+        fetchOrStale(
+            cachedReviews,
+            fetch = { fetchAllPages { page -> api.getPrReviews(owner, repo, prNumber, perPage = PAGE_SIZE, page = page) } },
+            save = { reviews ->
+                dao?.deletePrReviews(repoFullName, prNumber)
+                dao?.insertPrReviews(reviews.map {
+                    CachedPrReview("$repoFullName:$prNumber:${it.id}", repoFullName, prNumber, gson.toJson(it))
+                })
             }
         )
-        reviews
     }
 
     suspend fun getIssues(
@@ -163,103 +209,116 @@ class GitHubRepository(
         repo: String,
         state: String = "open",
         forceRefresh: Boolean = false
-    ): Result<List<GitHubIssue>> = runCatching {
+    ): Result<List<GitHubIssue>> = resultOf {
         val repoFullName = "$owner/$repo"
         val cached = dao?.getIssues(repoFullName, state)
+        val type = object : TypeToken<GitHubIssue>() {}.type
+        val cachedIssues = cached?.takeIf { it.isNotEmpty() }?.map { gson.fromJson<GitHubIssue>(it.json, type) }
         if (!forceRefresh && !cached.isNullOrEmpty() && !isExpired(cached.first().cachedAt, shortCacheMs)) {
-            val type = object : TypeToken<GitHubIssue>() {}.type
-            return@runCatching cached.map { gson.fromJson(it.json, type) }
+            return@resultOf cachedIssues.orEmpty()
         }
-        val issues = fetchAllPages { page -> api.getIssues(owner, repo, state, perPage = PAGE_SIZE, page = page) }
-            .filter { it.pullRequest == null }
-        dao?.deleteIssues(repoFullName, state)
-        dao?.insertIssues(
-            issues.map { CachedIssue("$repoFullName:${it.number}:$state", repoFullName, state, gson.toJson(it)) }
+        fetchOrStale(
+            cachedIssues,
+            fetch = { fetchAllPages { page -> api.getIssues(owner, repo, state, perPage = PAGE_SIZE, page = page) }.filter { it.pullRequest == null } },
+            save = { issues ->
+                dao?.deleteIssues(repoFullName, state)
+                dao?.insertIssues(issues.map { CachedIssue("$repoFullName:${it.number}:$state", repoFullName, state, gson.toJson(it)) })
+            }
         )
-        issues
     }
 
     suspend fun getReleases(owner: String, repo: String, forceRefresh: Boolean = false): Result<List<GitHubRelease>> =
-        runCatching {
+        resultOf {
             val repoFullName = "$owner/$repo"
             val cached = dao?.getReleases(repoFullName)
+            val type = object : TypeToken<GitHubRelease>() {}.type
+            val cachedReleases = cached?.takeIf { it.isNotEmpty() }?.map { gson.fromJson<GitHubRelease>(it.json, type) }
             if (!forceRefresh && !cached.isNullOrEmpty() && !isExpired(cached.first().cachedAt)) {
-                val type = object : TypeToken<GitHubRelease>() {}.type
-                return@runCatching cached.map { gson.fromJson(it.json, type) }
+                return@resultOf cachedReleases.orEmpty()
             }
-            val releases = fetchAllPages { page ->
-                api.getReleases(owner, repo, perPage = PAGE_SIZE, page = page)
-            }
-            dao?.deleteReleases(repoFullName)
-            dao?.insertReleases(releases.map { CachedRelease("$repoFullName:${it.id}", repoFullName, gson.toJson(it)) })
-            releases
+            fetchOrStale(
+                cachedReleases,
+                fetch = { fetchAllPages { page -> api.getReleases(owner, repo, perPage = PAGE_SIZE, page = page) } },
+                save = { releases ->
+                    dao?.deleteReleases(repoFullName)
+                    dao?.insertReleases(releases.map { CachedRelease("$repoFullName:${it.id}", repoFullName, gson.toJson(it)) })
+                }
+            )
         }
 
-    suspend fun getPrFiles(owner: String, repo: String, prNumber: Int): Result<List<PullRequestFile>> = runCatching {
+    suspend fun getPrFiles(owner: String, repo: String, prNumber: Int): Result<List<PullRequestFile>> = resultOf {
         val repoFullName = "$owner/$repo"
         val cached = dao?.getPrFiles(repoFullName, prNumber)
+        val type = object : TypeToken<List<PullRequestFile>>() {}.type
+        val cachedFiles = cached?.let { gson.fromJson<List<PullRequestFile>>(it.json, type) }
         if (cached != null && !isExpired(cached.cachedAt)) {
-            val type = object : TypeToken<List<PullRequestFile>>() {}.type
-            return@runCatching gson.fromJson(cached.json, type)
+            return@resultOf cachedFiles.orEmpty()
         }
-        val files = fetchAllPages { page ->
-            api.getPrFiles(owner, repo, prNumber, perPage = PAGE_SIZE, page = page)
-        }
-        dao?.insertPrFiles(CachedPrFiles("$repoFullName:$prNumber", repoFullName, prNumber, gson.toJson(files)))
-        files
+        fetchOrStale(
+            cachedFiles,
+            fetch = { fetchAllPages { page -> api.getPrFiles(owner, repo, prNumber, perPage = PAGE_SIZE, page = page) } },
+            save = { files -> dao?.insertPrFiles(CachedPrFiles("$repoFullName:$prNumber", repoFullName, prNumber, gson.toJson(files))) }
+        )
     }
 
     suspend fun getTrafficViews(owner: String, repo: String, forceRefresh: Boolean = false): Result<TrafficViews> =
-        runCatching {
+        resultOf {
             val repoFullName = "$owner/$repo"
             val cached = dao?.getTrafficViews(repoFullName)
+            val cachedValue = cached?.let { gson.fromJson(it.json, TrafficViews::class.java) }
             if (!forceRefresh && cached != null && !isExpired(cached.cachedAt, statsTrafficCacheMs)) {
-                return@runCatching gson.fromJson(cached.json, TrafficViews::class.java)
+                return@resultOf cachedValue ?: throw IllegalStateException("Cached traffic views are invalid")
             }
-            val result = api.getTrafficViews(owner, repo)
-            dao?.insertTrafficViews(CachedTrafficViews(repoFullName, gson.toJson(result)))
-            result
+            fetchOrStale(
+                cachedValue,
+                fetch = { api.getTrafficViews(owner, repo) },
+                save = { dao?.insertTrafficViews(CachedTrafficViews(repoFullName, gson.toJson(it))) }
+            )
         }
 
     suspend fun getTrafficClones(owner: String, repo: String, forceRefresh: Boolean = false): Result<TrafficClones> =
-        runCatching {
+        resultOf {
             val repoFullName = "$owner/$repo"
             val cached = dao?.getTrafficClones(repoFullName)
+            val cachedValue = cached?.let { gson.fromJson(it.json, TrafficClones::class.java) }
             if (!forceRefresh && cached != null && !isExpired(cached.cachedAt, statsTrafficCacheMs)) {
-                return@runCatching gson.fromJson(cached.json, TrafficClones::class.java)
+                return@resultOf cachedValue ?: throw IllegalStateException("Cached traffic clones are invalid")
             }
-            val result = api.getTrafficClones(owner, repo)
-            dao?.insertTrafficClones(CachedTrafficClones(repoFullName, gson.toJson(result)))
-            result
+            fetchOrStale(
+                cachedValue,
+                fetch = { api.getTrafficClones(owner, repo) },
+                save = { dao?.insertTrafficClones(CachedTrafficClones(repoFullName, gson.toJson(it))) }
+            )
         }
 
     suspend fun getContributorStats(
         owner: String,
         repo: String,
         forceRefresh: Boolean = false
-    ): Result<List<ContributorWeeklyStats>> = runCatching {
+    ): Result<List<ContributorWeeklyStats>> = resultOf {
         val repoFullName = "$owner/$repo"
         val cached = dao?.getContributorStats(repoFullName)
+        val type = object : TypeToken<List<ContributorWeeklyStats>>() {}.type
+        val cachedValue = cached?.let { gson.fromJson<List<ContributorWeeklyStats>>(it.json, type) }
         if (!forceRefresh && cached != null && !isExpired(cached.cachedAt, statsTrafficCacheMs)) {
-            val type = object : TypeToken<List<ContributorWeeklyStats>>() {}.type
-            return@runCatching gson.fromJson(cached.json, type)
+            return@resultOf cachedValue.orEmpty()
         }
-        val result = api.getContributorStats(owner, repo)
-        if (result.isNotEmpty()) {
-            dao?.insertContributorStats(CachedContributorStats(repoFullName, gson.toJson(result)))
-        }
-        result
+        fetchOrStale(
+            cachedValue,
+            fetch = { api.getContributorStats(owner, repo) },
+            save = { if (it.isNotEmpty()) dao?.insertContributorStats(CachedContributorStats(repoFullName, gson.toJson(it))) }
+        )
     }
 
-    suspend fun getNotifications(): Result<List<GitHubNotification>> = runCatching {
+    suspend fun getNotifications(): Result<List<GitHubNotification>> = resultOf {
         api.getNotifications()
     }
 
-    suspend fun searchCode(owner: String, repo: String, query: String): Result<CodeSearchResponse> = runCatching {
+    suspend fun searchCode(owner: String, repo: String, query: String): Result<CodeSearchResponse> = resultOf {
         api.searchCode("$query+repo:$owner/$repo")
     }
 
-    suspend fun markNotificationRead(threadId: String): Result<Unit> = runCatching {
+    suspend fun markNotificationRead(threadId: String): Result<Unit> = resultOf {
         val response = api.markNotificationRead(threadId)
         if (!response.isSuccessful) throw HttpException(response)
         Unit
@@ -270,16 +329,19 @@ class GitHubRepository(
         repo: String,
         ref: String,
         forceRefresh: Boolean = false
-    ): Result<CheckRunsResponse> = runCatching {
+    ): Result<CheckRunsResponse> = resultOf {
         val repoFullName = "$owner/$repo"
         val cacheId = "$repoFullName:$ref"
         val cached = dao?.getCheckRuns(cacheId)
+        val cachedValue = cached?.let { gson.fromJson(it.json, CheckRunsResponse::class.java) }
         if (!forceRefresh && cached != null && !isExpired(cached.cachedAt)) {
-            return@runCatching gson.fromJson(cached.json, CheckRunsResponse::class.java)
+            return@resultOf cachedValue ?: throw IllegalStateException("Cached check runs are invalid")
         }
-        val result = api.getCheckRuns(owner, repo, ref)
-        dao?.insertCheckRuns(CachedCheckRuns(cacheId, repoFullName, ref, gson.toJson(result)))
-        result
+        fetchOrStale(
+            cachedValue,
+            fetch = { api.getCheckRuns(owner, repo, ref) },
+            save = { dao?.insertCheckRuns(CachedCheckRuns(cacheId, repoFullName, ref, gson.toJson(it))) }
+        )
     }
 
     companion object {
@@ -292,16 +354,19 @@ class GitHubRepository(
         owner: String,
         repo: String,
         forceRefresh: Boolean = false
-    ): Result<List<CommitWeekActivity>> = runCatching {
+    ): Result<List<CommitWeekActivity>> = resultOf {
         val repoFullName = "$owner/$repo"
         val cached = dao?.getCommitActivity(repoFullName)
+        val type = object : TypeToken<List<CommitWeekActivity>>() {}.type
+        val cachedValue = cached?.let { gson.fromJson<List<CommitWeekActivity>>(it.json, type) }
         // 커밋 활동은 1시간 캐싱
         if (!forceRefresh && cached != null && System.currentTimeMillis() - cached.cachedAt < 60 * 60 * 1000L) {
-            val type = object : TypeToken<List<CommitWeekActivity>>() {}.type
-            return@runCatching gson.fromJson<List<CommitWeekActivity>>(cached.json, type)
+            return@resultOf cachedValue.orEmpty()
         }
-        val activity = api.getCommitActivity(owner, repo)
-        dao?.insertCommitActivity(CachedCommitActivity(repoFullName, gson.toJson(activity)))
-        activity
+        fetchOrStale(
+            cachedValue,
+            fetch = { api.getCommitActivity(owner, repo) },
+            save = { dao?.insertCommitActivity(CachedCommitActivity(repoFullName, gson.toJson(it))) }
+        )
     }
 }
