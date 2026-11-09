@@ -7,9 +7,11 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import java.io.IOException
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Test
 
@@ -71,5 +73,14 @@ class GitHubRepositoryTest {
 
         assertTrue(result.isFailure)
         assertTrue(result.exceptionOrNull() is IOException)
+    }
+
+    @Test
+    fun getUserRepos_propagatesCoroutineCancellation() {
+        coEvery { api.getUserRepos(perPage = 100, page = 1) } throws CancellationException("cancelled")
+
+        assertThrows(CancellationException::class.java) {
+            runBlocking { repository.getUserRepos(forceRefresh = true) }
+        }
     }
 }

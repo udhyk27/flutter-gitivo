@@ -13,6 +13,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import java.io.IOException
 import org.junit.Before
 import org.junit.Test
 
@@ -69,6 +70,25 @@ class GitHubRepositoryCacheTest {
         assertEquals(listOf(8), result.map { it.number })
         coVerify(exactly = 1) { dao.deletePrs("user/repo", "open") }
         coVerify(exactly = 1) { dao.insertPrs(match { it.size == 1 && it[0].id == "user/repo:8:open" }) }
+    }
+
+    @Test
+    fun getPullRequests_returnsExpiredCacheWhenRefreshFails() = runBlocking {
+        val stale = CachedPr(
+            "user/repo:7:open",
+            "user/repo",
+            "open",
+            gson.toJson(pr(7)),
+            cachedAt = System.currentTimeMillis() - 10 * 60 * 1000L
+        )
+        coEvery { dao.getPrs("user/repo", "open") } returns listOf(stale)
+        coEvery { api.getPullRequests("user", "repo", state = "open", perPage = 100, page = 1) } throws IOException("offline")
+
+        val result = repository.getPullRequests("user", "repo", "open", forceRefresh = true).getOrThrow()
+
+        assertEquals(listOf(7), result.map { it.number })
+        coVerify(exactly = 0) { dao.deletePrs("user/repo", "open") }
+        coVerify(exactly = 0) { dao.insertPrs(any()) }
     }
 
     @Test

@@ -5,6 +5,7 @@ import com.google.gson.reflect.TypeToken
 import com.ydh.salvio.data.api.GitHubApi
 import com.ydh.salvio.data.local.*
 import com.ydh.salvio.data.model.*
+import java.io.IOException
 import retrofit2.HttpException
 import kotlinx.coroutines.CancellationException
 
@@ -26,13 +27,15 @@ class GitHubRepository(
         fetch: suspend () -> T,
         save: suspend (T) -> Unit
     ): T {
-        try {
-            return fetch().also { save(it) }
+        val fresh = try {
+            fetch()
         } catch (cancelled: CancellationException) {
             throw cancelled
-        } catch (error: Exception) {
+        } catch (error: IOException) {
             return staleValue ?: throw error
         }
+        save(fresh)
+        return fresh
     }
 
     private suspend fun <T> resultOf(block: suspend () -> T): Result<T> = try {
@@ -163,8 +166,8 @@ class GitHubRepository(
         val repoFullName = "$owner/$repo"
         val cached = dao?.getRepo(repoFullName)
         val cachedRepo = cached?.let { gson.fromJson(it.json, GitHubRepo::class.java) }
-        if (!forceRefresh && cached != null && !isExpired(cached.cachedAt)) {
-            return@resultOf cachedRepo!!
+        if (!forceRefresh && cached != null && !isExpired(cached.cachedAt) && cachedRepo != null) {
+            return@resultOf cachedRepo
         }
         fetchOrStale(
             cachedRepo,
